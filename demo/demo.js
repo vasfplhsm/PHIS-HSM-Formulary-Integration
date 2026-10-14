@@ -1,0 +1,1 @@
+document.getElementById('add').onclick=()=>{const tr=document.createElement('tr');const td=document.createElement('td');td.tabIndex=0;td.textContent='Esomeprazole 40 mg Injection';tr.append(td);for(const s of ['Mock order','1 vial']){const cell=document.createElement('td');cell.textContent=s;tr.append(cell)}document.getElementById('rows').append(tr)};

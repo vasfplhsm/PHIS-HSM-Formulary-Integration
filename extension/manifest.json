@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "HSM PHIS Formulary",
+  "version": "0.1.0",
+  "description": "Local hospital formulary reference on approved PHIS sites.",
+  "permissions": [
+    "storage",
+    "scripting"
+  ],
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "settings.html"
+  },
+  "options_page": "settings.html"
+}
