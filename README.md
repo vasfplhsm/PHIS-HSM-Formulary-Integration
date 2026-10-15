@@ -2,7 +2,9 @@
 
 Edge/Chrome Manifest V3 prototype. Bundles 1,025 entries from the supplied HSM CSV, recorded update date 16/07/2026. All reference processing and CSV imports stay in the browser. No analytics or remote clinical requests.
 
-## Version 0.3.0
+## Version 0.3.1
+
+The medication name, match status, and close button stay visible while you scroll the reference. Opening a different medication starts at the top of its information.
 
 A refreshed interface for the extension and demo: soft green and teal colours, a matching toolbar icon, clearer typography, and responsive settings cards. The medication popup separates indications, dosage guidance, and restrictions, with administrative information under **Prescribing details**. Product/route confirmation remains prominent for uncertain matches. Fonts and icons are bundled or supplied by the system; the interface does not load remote assets.
 
@@ -13,6 +15,8 @@ Settings now show the active source, formatted update date, medication count, co
 These screenshots use synthetic demo orders and simulated extension API bindings. They show the actual extension HTML/CSS.
 
 ![Medication reference popup](docs/previews/medication-popup.png)
+
+[Preview the popup scrolled to the bottom, with its medication title still visible](docs/previews/medication-popup-scrolled.png)
 
 <img src="docs/previews/settings.png" alt="Modern HSM Formulary settings with site registration and CSV import" width="360">
 
@@ -55,4 +59,4 @@ Formulary listing does not indicate stock. Dosage is source reference text, not 
 
 ## Updating an unpacked installation
 
-Download the latest GitHub ZIP and extract it to a stable folder. Replace the files in the extension folder you previously loaded, then open `edge://extensions` and choose **Reload** on HSM PHIS Formulary. Check that version **0.3.0** is shown, then reload your PHIS tab. Keeping the same loaded folder preserves the extension identity and local settings. If you instead load a different folder as a new extension, disable/remove the previous copy and register your PHIS address again.
+Download the latest GitHub ZIP and extract it to a stable folder. Replace the files in the extension folder you previously loaded, then open `edge://extensions` and choose **Reload** on HSM PHIS Formulary. Check that version **0.3.1** is shown, then reload your PHIS tab. Keeping the same loaded folder preserves the extension identity and local settings. If you instead load a different folder as a new extension, disable/remove the previous copy and register your PHIS address again.

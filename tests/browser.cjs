@@ -47,6 +47,7 @@ const root = path.resolve(__dirname, '..');
         assert.match(text, /Possible reference — confirm product/);
         assert.match(text, /omits “Sublingual”/);
         assert.doesNotMatch(text, /Listed in HSM formulary/);
+        assert.equal(await panel.locator('.medication-title').textContent(), 'Glyceryl Trinitrate 0.5 mg Tablet');
       } else assert.match(text, /Listed in HSM formulary/);
       if (index === 5) assert.match(text, /Trimetazidine 35mg MR Tablet/);
       const bounds = await panel.boundingBox();
@@ -65,6 +66,21 @@ const root = path.resolve(__dirname, '..');
         await details.locator('summary').click();
         await details.getByRole('heading', {name: /Prescriber category/i}).waitFor({state: 'visible'});
         assert.equal(await details.getAttribute('open') !== null, true);
+        const titleBefore = await panel.locator('.medication-title').boundingBox();
+        await panel.hover({position: {x: 25, y: bounds.height - 35}});
+        await page.mouse.wheel(0, 1200);
+        await page.waitForFunction(() => {
+          const panel = document.querySelector('#hsm-formulary-root').shadowRoot.querySelector('section');
+          return panel.scrollTop >= panel.scrollHeight - panel.clientHeight - 1;
+        });
+        const titleAfter = await panel.locator('.medication-title').boundingBox();
+        assert.ok(Math.abs(titleAfter.y - titleBefore.y) < 1, 'Medication title remains fixed while the content scrolls');
+        assert.equal(await panel.locator('.medication-title').textContent(), 'Bisoprolol Fumarate 2.5 mg Tablet');
+        if (process.env.PHIS_SCREENSHOT_DIR) {
+          await page.screenshot({path: path.join(process.env.PHIS_SCREENSHOT_DIR, 'medication-popup-scrolled.png')});
+        }
+        await panel.getByRole('button', {name: 'Close', exact: true}).click();
+        await panel.waitFor({state: 'hidden'});
       }
       await page.keyboard.press('Escape');
       await panel.waitFor({state: 'hidden'});

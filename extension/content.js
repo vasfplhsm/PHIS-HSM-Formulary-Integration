@@ -27,12 +27,13 @@
     *{box-sizing:border-box}svg{width:17px;height:17px;flex-shrink:0}
     .panel{pointer-events:auto;font:13px/1.65 "Segoe UI",system-ui,-apple-system,sans-serif;color:#254840;background:#fff;border:1px solid #dbe6db;border-radius:18px;box-shadow:0 18px 60px #173b3026,0 4px 12px #173b3010;overflow:auto;overscroll-behavior:contain;width:420px;max-width:calc(100vw - 16px);scrollbar-width:thin;scrollbar-color:#c7d8ca transparent}
     .panel[hidden]{display:none}
-    .topbar{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:9px;padding:14px 19px;background:#f8faf5;border-bottom:1px solid #e8eee3}
+    .sticky-header{position:sticky;top:0;z-index:1;background:#fff;box-shadow:0 3px 8px #173b3007}
+    .topbar{display:flex;align-items:center;gap:9px;padding:14px 19px;background:#f8faf5;border-bottom:1px solid #e8eee3}
     .mark{display:grid;place-items:center;width:29px;height:29px;border-radius:9px;background:#186c59;color:#edffef}.mark svg{width:21px;height:21px}
     .topbar strong{display:block;font-size:11px;font-weight:650;letter-spacing:.1px;color:#37654e}.topbar small{display:block;font-size:9px;line-height:1.5;color:#708462;letter-spacing:.25px}
     .close{display:grid;place-items:center;margin-left:auto;align-self:flex-start;width:28px;height:28px;border:0;border-radius:8px;background:transparent;color:#8ba089;cursor:pointer}.close:hover{background:#eaf0e4;color:#335f45}.close svg{width:14px;height:14px}button:focus-visible,summary:focus-visible{outline:3px solid #7db69e;outline-offset:2px}
-    .panel-body{padding:21px 21px 10px}.medication-title{font-size:21px;line-height:1.35;letter-spacing:-.6px;font-weight:650;color:#173e33;margin:0 0 11px;overflow-wrap:anywhere}
-    .badges{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:0 0 15px}.badge{display:inline-flex;gap:5px;align-items:center;font-size:9px;font-weight:650;line-height:1.6;padding:4px 7px;border-radius:5px;background:#eaf5ea;color:#387045;letter-spacing:.1px}.badge svg{width:12px;height:12px}.badge.amber{background:#fff2d8;color:#9b6b19}.stock-note{font-size:9px;color:#77866c}
+    .title-block{padding:18px 21px 14px;border-bottom:1px solid #edf1e8}.panel-body{padding:17px 21px 10px}.medication-title{font-size:21px;line-height:1.35;letter-spacing:-.6px;font-weight:650;color:#173e33;margin:0 0 11px;overflow-wrap:anywhere}
+    .badges{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:0}.badge{display:inline-flex;gap:5px;align-items:center;font-size:9px;font-weight:650;line-height:1.6;padding:4px 7px;border-radius:5px;background:#eaf5ea;color:#387045;letter-spacing:.1px}.badge svg{width:12px;height:12px}.badge.amber{background:#fff2d8;color:#9b6b19}.stock-note{font-size:9px;color:#77866c}
     .brand-line{display:flex;gap:7px;align-items:baseline;padding-bottom:16px;margin-bottom:17px;border-bottom:1px solid #edf1e8}.brand-line span{font-size:9px;color:#97a28b;text-transform:uppercase;letter-spacing:1px;font-weight:600}.brand-line strong{font-size:12px;color:#657b56;font-weight:500;overflow-wrap:anywhere}
     .reference-block{margin:0 0 18px}.field-heading{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.1px;color:#607e52;margin:0 0 8px}.field-heading svg{width:15px;height:15px;color:#87a17b}.field-value{font-size:13px;line-height:1.8;margin:0;white-space:pre-wrap;overflow-wrap:anywhere;color:#3f584b}
     .reference-block.dosage{background:#f1f7ee;border:1px solid #e4eedf;border-radius:11px;padding:14px 15px;margin-left:-1px;margin-right:-1px}.dosage .field-heading{color:#4f7d45}.dosage .field-heading svg{color:#6a9861}.dosage .field-value{color:#395f35}
@@ -43,12 +44,13 @@
     @media(prefers-reduced-motion:reduce){*{transition:none!important}}
   </style>
   <section class="panel" hidden role="dialog" aria-label="Hospital formulary reference">
-    <header class="topbar"><span class="mark">${icon('brand')}</span><div><strong>HSM Formulary</strong><small>Medication reference</small></div><button class="close" aria-label="Close">${icon('close')}</button></header>
+    <header class="sticky-header"><div class="topbar"><span class="mark">${icon('brand')}</span><div><strong>HSM Formulary</strong><small>Medication reference</small></div><button class="close" aria-label="Close">${icon('close')}</button></div><div class="title-block"></div></header>
     <div class="panel-body"></div>
     <footer class="panel-footer">${icon('book')}<div><strong class="source-date"></strong><p>Reference guidance; confirm suitability for this patient.<br>Stock availability and interactions are not checked.</p></div></footer>
   </section>`;
   document.documentElement.append(host);
   const panel = shadow.querySelector('section'), body = shadow.querySelector('.panel-body');
+  const titleBlock = shadow.querySelector('.title-block');
   shadow.querySelector('.source-date').textContent = `HSM formulary · Updated ${data.updated}`;
   let timer, activeCell;
   function close() { panel.hidden = true; activeCell = null; }
@@ -121,20 +123,23 @@
     if (activeCell === cell && !panel.hidden) return;
     activeCell = cell;
     body.replaceChildren();
+    titleBlock.replaceChildren();
     const title = document.createElement('h3');
     title.className = 'medication-title';
-    title.textContent = result.kind === 'candidate' ? 'Possible reference — confirm product' :
-      result.records.length > 1 ? 'Multiple formulary matches' : result.records[0].name;
-    body.append(title);
+    title.textContent = result.kind === 'candidate' || result.records.length > 1
+      ? extractText(cell).trim().replace(/\s+/g, ' ') : result.records[0].name;
+    titleBlock.append(title);
     const badges = document.createElement('div'); badges.className = 'badges';
-    const badge = document.createElement('span'); badge.className = 'badge' + (result.kind === 'candidate' ? ' amber' : '');
-    badge.innerHTML = icon(result.kind === 'candidate' ? 'warning' : 'check');
-    const badgeText = document.createElement('span'); badgeText.textContent = result.kind === 'candidate' ? 'Confirm product and route' : 'Listed in HSM formulary';
+    const needsConfirmation = result.kind === 'candidate' || result.records.length > 1;
+    const badge = document.createElement('span'); badge.className = 'badge' + (needsConfirmation ? ' amber' : '');
+    badge.innerHTML = icon(needsConfirmation ? 'warning' : 'check');
+    const badgeText = document.createElement('span'); badgeText.textContent = result.kind === 'candidate' ? 'Possible reference — confirm product' :
+      result.records.length > 1 ? 'Multiple formulary matches' : 'Listed in HSM formulary';
     badge.append(badgeText); badges.append(badge);
     if (result.kind !== 'candidate') {
       const note = document.createElement('span'); note.className = 'stock-note'; note.textContent = 'Stock not checked'; badges.append(note);
     }
-    body.append(badges);
+    titleBlock.append(badges);
     if (result.kind === 'candidate') field('Confirmation required', result.reason, {tone: 'warning', symbol: 'warning'});
     if (result.records.length > 1) field('Choose the correct product', 'This label matches multiple records. Confirm the strength and formulation.', {tone: 'warning', symbol: 'warning'});
     for (const record of result.records) {
@@ -163,6 +168,7 @@
       }
     }
     panel.hidden = false;
+    panel.scrollTop = 0;
     place(cell);
   }
 
