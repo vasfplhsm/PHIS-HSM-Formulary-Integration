@@ -1,1 +1,26 @@
-<!doctype html><html><head><meta charset="utf-8"><title>PHIS formulary demo</title><style>body{font:16px system-ui;margin:40px;background:#f0f5fa;color:#153047}table{border-collapse:collapse;background:white;width:100%}th{background:#064c9b;color:white}td,th{padding:18px;border:1px solid #b8cbdc;text-align:left}button{padding:10px}</style></head><body><h1>PHIS Formulary prototype</h1><p>Mock prescription — no patient data. Enable http://localhost:8080 in the extension, reload, then hover or focus a medication.</p><table><thead><tr><th>Drug Name</th><th>Order Detail</th><th>Quantity</th></tr></thead><tbody id="rows"><tr><td tabindex="0">Aripiprazole 10mg Tablet</td><td>Mock order</td><td>72 tablets</td></tr><tr><td tabindex="0">Dexlansoprazole 30 mg Delayed Release Capsule</td><td>Mock order</td><td>30 capsules</td></tr></tbody></table><p><button id="add">Simulate prescription update</button></p><script src="demo.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HSM PHIS formulary demo</title>
+  <link rel="stylesheet" href="demo.css">
+</head>
+<body>
+  <main>
+    <h1>HSM PHIS Formulary <span>Prototype 0.2</span></h1>
+    <p>This mock prescription uses the medication labels from the supplied screenshot. Orders are fictional; no patient or prescriber details are included.</p>
+    <aside>Enable this page’s origin in the extension and reload. Hover a drug name or press Tab to focus it. Glyceryl Trinitrate shows a route confirmation warning.</aside>
+    <h2>Prescription</h2>
+    <div class="table-scroll">
+      <table aria-label="Mock prescription">
+        <thead><tr><th aria-label="Select"></th><th>Drug Name</th><th>Order Detail</th><th>Order Qty</th><th>Prev Disp Qty</th><th>Reserve Qty</th><th>Remarks</th><th>Drug Status</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <p><button id="add">Simulate prescription update</button></p>
+    <p class="note">This demo verifies screen behavior only. It does not establish integration with your hospital’s actual HTML, stock availability, or interaction checking.</p>
+  </main>
+  <script src="demo.js"></script>
+</body>
+</html>
