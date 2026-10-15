@@ -20,7 +20,8 @@ function appendMedication(label) {
   const split = label.lastIndexOf(' ');
   const start = document.createElement('span'); start.textContent = label.slice(0, split);
   const end = document.createElement('span'); end.textContent = label.slice(split + 1);
-  name.append(start, document.createElement('br'), end);
+  if (split < 0) name.textContent = label;
+  else name.append(start, document.createElement('br'), end);
   const icons = document.createElement('div'); icons.className = 'icons';
   const warning = document.createElement('span'); warning.setAttribute('aria-hidden', 'true'); warning.textContent = '⚠';
   const info = document.createElement('button'); info.type = 'button'; info.textContent = 'i'; info.setAttribute('aria-label', 'Mock PHIS information');
@@ -34,3 +35,7 @@ function appendMedication(label) {
 }
 labels.forEach(appendMedication);
 document.getElementById('add').onclick = () => appendMedication('Esomeprazole 40 mg Injection');
+
+document.getElementById('imperfect').onclick = () => {
+  for (const label of ['Metformni 500mg tablet', 'Bisoprolol 2.5 mg Tab', 'metform']) appendMedication(label);
+};

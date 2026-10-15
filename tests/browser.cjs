@@ -40,14 +40,20 @@ const root = path.resolve(__dirname, '..');
       assert.equal(await cell.getAttribute('tabindex'), '0');
       await cell.locator('.name').hover();
       await panel.waitFor({state: 'visible', timeout: 5000});
+      if (index === 4) {
+        assert.equal(await panel.getByRole('heading', {name: /^Dosage reference$/i}).count(), 0);
+        assert.match(await panel.innerText(), /omits “Sublingual”/);
+        assert.equal(await panel.locator('.medication-title').textContent(), 'Glyceryl Trinitrate 0.5 mg Tablet');
+        await panel.getByRole('button', {name: 'View reference for Glyceryl Trinitrate 0.5mg Sublingual Tablet', exact: true}).click();
+      }
       const text = await panel.innerText();
       assert.match(text, /Indication/i);
       assert.match(text, /Dosage reference/i);
       if (index === 4) {
-        assert.match(text, /Possible reference — confirm product/);
+        assert.match(text, /Selected reference — verify product/);
         assert.match(text, /omits “Sublingual”/);
         assert.doesNotMatch(text, /Listed in HSM formulary/);
-        assert.equal(await panel.locator('.medication-title').textContent(), 'Glyceryl Trinitrate 0.5 mg Tablet');
+        assert.equal(await panel.locator('.medication-title').textContent(), 'Glyceryl Trinitrate 0.5mg Sublingual Tablet');
       } else assert.match(text, /Listed in HSM formulary/);
       if (index === 5) assert.match(text, /Trimetazidine 35mg MR Tablet/);
       const bounds = await panel.boundingBox();
@@ -85,6 +91,55 @@ const root = path.resolve(__dirname, '..');
       await page.keyboard.press('Escape');
       await panel.waitFor({state: 'hidden'});
     }
+    // Fallbacks show choices without clinical details, and never persist a selection.
+    await page.evaluate(() => appendMedication('Metformni 500mg tablet'));
+    const imperfect = drugs.last();
+    await imperfect.hover();
+    await panel.waitFor({state: 'visible'});
+    assert.equal(await panel.locator('.suggestion-card').count(), 2);
+    assert.equal(await panel.getByRole('heading', {name: /^Dosage reference$/i}).count(), 0);
+    assert.equal(await panel.getByRole('heading', {name: /^Indication$/i}).count(), 0);
+    assert.match(await panel.innerText(), /Release type is omitted/);
+    if (process.env.PHIS_SCREENSHOT_DIR) {
+      await page.screenshot({path: path.join(process.env.PHIS_SCREENSHOT_DIR, 'possible-matches.png')});
+    }
+    const immediate = panel.getByRole('button', {name: 'View reference for Metformin HCl 500 mg Tablet', exact: true});
+    await immediate.focus();
+    await page.keyboard.press('Enter');
+    await panel.getByRole('heading', {name: /^Dosage reference$/i}).waitFor({state: 'visible'});
+    assert.equal(await panel.locator('.medication-title').textContent(), 'Metformin HCl 500 mg Tablet');
+    assert.equal(await panel.locator('.product-group').count(), 1);
+    assert.match(await panel.innerText(), /PHIS label: Metformni 500mg tablet/);
+    assert.match(await panel.innerText(), /Selected reference — verify product/);
+    await page.waitForTimeout(550);
+    assert.equal(await panel.isVisible(), true, 'Keyboard selection keeps the reference open');
+    await panel.getByRole('button', {name: 'Back to possible matches', exact: false}).click();
+    assert.equal(await panel.getByRole('heading', {name: /^Dosage reference$/i}).count(), 0);
+    await panel.getByRole('button', {name: 'View reference for Metformin HCl 500 mg Extended Release Tablet', exact: true}).click();
+    assert.equal(await panel.locator('.medication-title').textContent(), 'Metformin HCl 500 mg Extended Release Tablet');
+    await page.keyboard.press('Escape');
+    await imperfect.hover();
+    await panel.waitFor({state: 'visible'});
+    assert.equal(await panel.getByRole('heading', {name: /^Dosage reference$/i}).count(), 0, 'Selections are not reused automatically');
+    await panel.getByRole('button', {name: 'None of these — close', exact: true}).click();
+    await panel.waitFor({state: 'hidden'});
+    await page.evaluate(() => appendMedication('metform'));
+    await drugs.last().hover();
+    await panel.waitFor({state: 'visible'});
+    assert.match(await panel.innerText(), /Strength is not specified/);
+    assert.match(await panel.innerText(), /Dosage form is not specified/);
+    await page.keyboard.press('Escape');
+    await page.evaluate(() => appendMedication('Dexilant'));
+    await drugs.last().hover();
+    await panel.waitFor({state: 'visible'});
+    assert.match(await panel.innerText(), /Multiple formulary matches/);
+    assert.equal(await panel.getByRole('heading', {name: /^Dosage reference$/i}).count(), 0);
+    await panel.getByRole('button', {name: 'View reference for Dexlansoprazole 60mg Delayed Release Capsule', exact: true}).click();
+    assert.equal(await panel.locator('.medication-title').textContent(), 'Dexlansoprazole 60mg Delayed Release Capsule');
+    await page.keyboard.press('Escape');
+    await page.evaluate(() => appendMedication('Bisoprolol 25 mg Tab'));
+    await drugs.last().hover();
+    assert.equal(await panel.isVisible(), false, 'A conflicting strength cannot open a suggested reference');
     // A name in the Remarks column must not activate a medication popup.
     await page.locator('#rows tr').first().locator('td').nth(6).evaluate(el => { el.textContent = 'Perindopril 4 mg Tablet'; });
     await page.locator('#rows tr').first().locator('td').nth(6).hover();
@@ -109,7 +164,7 @@ const root = path.resolve(__dirname, '..');
     await denied.addScriptTag({path: path.join(root, 'extension/content.js')});
     assert.equal(await denied.locator('#hsm-formulary-root').count(), 0);
     assert.deepEqual(errors, []);
-    console.log('PASS: eight medication labels with wrapping/icons; route warning; hover persistence; expandable prescribing details; popup bounds; Escape; column scoping; dynamic keyboard focus; stale reference dismissal; origin restriction. Extension APIs mocked.');
+    console.log('PASS: screenshot labels; candidate selection with keyboard and mouse; details hidden before selection; missing-detail warnings; ambiguous brands; back/dismissal; nonpersistent choices; sticky scrolling; dynamic rows; origin and column restrictions. Extension APIs mocked.');
   } finally {
     if (browser) await browser.close();
     await new Promise(resolve => server.close(resolve));

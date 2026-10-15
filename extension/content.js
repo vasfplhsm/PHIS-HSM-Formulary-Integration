@@ -39,6 +39,7 @@
     .reference-block.dosage{background:#f1f7ee;border:1px solid #e4eedf;border-radius:11px;padding:14px 15px;margin-left:-1px;margin-right:-1px}.dosage .field-heading{color:#4f7d45}.dosage .field-heading svg{color:#6a9861}.dosage .field-value{color:#395f35}
     .reference-block.warning{background:#fff8e9;border:1px solid #f2e3c2;border-radius:11px;padding:13px 14px}.warning .field-heading{color:#9a7636}.warning .field-heading svg{color:#b18b42}.warning .field-value{color:#806237;font-size:12px}
     .product-group+.product-group{border-top:1px solid #e5ecdf;padding-top:20px;margin-top:20px}
+    .suggestion-list{display:grid;gap:11px;margin-bottom:15px}.suggestion-card{border:1px solid #e0e8d9;border-radius:12px;padding:14px;background:#fcfdf9}.suggestion-name{font-size:14px;font-weight:600;line-height:1.5;color:#315741;margin:0 0 5px;overflow-wrap:anywhere}.suggestion-brand,.suggestion-reason{font-size:11px;color:#728267;line-height:1.6;margin:4px 0}.suggestion-warnings{font-size:11px;line-height:1.65;color:#956b27;margin:8px 0;padding-left:17px}.choice-button{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:9px 12px;margin-top:12px;background:#edf5e8;color:#386245;border:1px solid #d4e4cd;border-radius:8px;font:600 11px/1.5 "Segoe UI",system-ui,sans-serif;cursor:pointer}.choice-button:hover{background:#dfeeda}.choice-button svg{width:12px;height:12px}.back-button,.none-button{border:0;background:none;color:#617d53;font:500 11px/1.6 "Segoe UI",system-ui,sans-serif;cursor:pointer;padding:5px 0;margin:0 0 14px;text-align:left}.back-button:hover,.none-button:hover{text-decoration:underline}.detected-label{font-size:10px;line-height:1.6;color:#748468;margin:8px 0 0;overflow-wrap:anywhere}.suggestion-count{font-size:10px;color:#7d8d70;margin:0 0 12px}
     .details{border-top:1px solid #e8eee2;margin:0 0 8px;padding-top:2px}.details summary{display:flex;align-items:center;gap:7px;cursor:pointer;color:#748b64;font-size:11px;font-weight:600;list-style:none;padding:12px 0}.details summary::-webkit-details-marker{display:none}.details summary svg{width:11px;height:11px;transition:transform .15s}.details[open] summary svg{transform:rotate(90deg)}.details-content{padding:3px 0 0}.details-content .reference-block{margin-bottom:12px}.details-content .field-heading{font-size:9px;letter-spacing:.6px}.details-content .field-value{font-size:12px}
     .panel-footer{display:flex;gap:8px;align-items:flex-start;background:#fafbf7;border-top:1px solid #e9eee3;padding:13px 21px 15px;color:#8c9c7c}.panel-footer>svg{width:14px;height:14px;margin-top:2px}.panel-footer strong{display:block;font-size:10px;line-height:1.6;font-weight:500;color:#647d54}.panel-footer p{font-size:9px;line-height:1.6;margin:4px 0 0;color:#718064}
     @media(prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -116,35 +117,82 @@
       : Math.max(gap, box.top - panel.offsetHeight - gap) + 'px';
   }
 
-  function show(cell) {
+  function show(cell, {selected = null, force = false} = {}) {
     const result = resultFor(cell);
     if (!result.records.length) { close(); return; }
+    if (selected && !result.records.includes(selected)) { close(); return; }
     clearTimeout(timer);
-    if (activeCell === cell && !panel.hidden) return;
+    if (activeCell === cell && !panel.hidden && !force) return;
     activeCell = cell;
+    const detectedText = extractText(cell).trim().replace(/\s+/g, ' ');
+    const needsChoice = ['possible', 'candidate'].includes(result.kind) || result.records.length > 1;
+    const waitingForChoice = needsChoice && !selected;
     body.replaceChildren();
     titleBlock.replaceChildren();
     const title = document.createElement('h3');
     title.className = 'medication-title';
-    title.textContent = result.kind === 'candidate' || result.records.length > 1
-      ? extractText(cell).trim().replace(/\s+/g, ' ') : result.records[0].name;
+    title.textContent = selected ? selected.name : needsChoice ? detectedText : result.records[0].name;
     titleBlock.append(title);
     const badges = document.createElement('div'); badges.className = 'badges';
-    const needsConfirmation = result.kind === 'candidate' || result.records.length > 1;
+    const needsConfirmation = needsChoice;
     const badge = document.createElement('span'); badge.className = 'badge' + (needsConfirmation ? ' amber' : '');
     badge.innerHTML = icon(needsConfirmation ? 'warning' : 'check');
-    const badgeText = document.createElement('span'); badgeText.textContent = result.kind === 'candidate' ? 'Possible reference — confirm product' :
+    const badgeText = document.createElement('span'); badgeText.textContent = selected ? 'Selected reference — verify product' :
+      result.kind === 'possible' ? 'Possible matches — choose a product' : result.kind === 'candidate' ? 'Possible reference — confirm product' :
       result.records.length > 1 ? 'Multiple formulary matches' : 'Listed in HSM formulary';
     badge.append(badgeText); badges.append(badge);
-    if (result.kind !== 'candidate') {
+    if (!needsChoice) {
       const note = document.createElement('span'); note.className = 'stock-note'; note.textContent = 'Stock not checked'; badges.append(note);
     }
     titleBlock.append(badges);
-    if (result.kind === 'candidate') field('Confirmation required', result.reason, {tone: 'warning', symbol: 'warning'});
-    if (result.records.length > 1) field('Choose the correct product', 'This label matches multiple records. Confirm the strength and formulation.', {tone: 'warning', symbol: 'warning'});
-    for (const record of result.records) {
+    function validCell() {
+      return activeCell === cell && cell.isConnected && extractText(cell).trim().replace(/\s+/g, ' ') === detectedText;
+    }
+    if (selected) {
+      const detected = document.createElement('p'); detected.className = 'detected-label'; detected.textContent = 'PHIS label: ' + detectedText; titleBlock.append(detected);
+      const back = document.createElement('button'); back.type = 'button'; back.className = 'back-button'; back.textContent = '← Back to possible matches';
+      back.onclick = () => {
+        if (!validCell()) { close(); return; }
+        show(cell, {force: true});
+        body.querySelector('.choice-button')?.focus({preventScroll: true});
+      }; body.append(back);
+      const suggestion = result.suggestions?.find(item => item.record === selected);
+      const reason = result.reason || 'You selected one of multiple records. Verify the product against the PHIS prescription.';
+      field('Confirm against the prescription', [reason, ...(suggestion?.warnings || [])].join('\n'), {tone: 'warning', symbol: 'warning'});
+    } else if (needsChoice) {
+      field('Possible matches', result.reason || 'This label matches multiple records. Choose the correct generic name, strength, route, and formulation.', {tone: 'warning', symbol: 'warning'});
+      if (result.total > result.records.length) {
+        const count = document.createElement('p'); count.className = 'suggestion-count'; count.textContent = `Showing ${result.records.length} of ${result.total} suggestions. Check the full formulary if your product is missing.`; body.append(count);
+      }
+      const list = document.createElement('div'); list.className = 'suggestion-list';
+      for (const record of result.records) {
+        const item = document.createElement('article'); item.className = 'suggestion-card';
+        const name = document.createElement('h4'); name.className = 'suggestion-name'; name.textContent = record.name; item.append(name);
+        if (record.brand) { const brand = document.createElement('p'); brand.className = 'suggestion-brand'; brand.textContent = record.brand; item.append(brand); }
+        const suggestion = result.suggestions?.find(entry => entry.record === record);
+        if (suggestion) {
+          const reason = document.createElement('p'); reason.className = 'suggestion-reason'; reason.textContent = suggestion.reason; item.append(reason);
+          if (suggestion.warnings.length) {
+            const warnings = document.createElement('ul'); warnings.className = 'suggestion-warnings';
+            for (const value of suggestion.warnings) { const warning = document.createElement('li'); warning.textContent = value; warnings.append(warning); }
+            item.append(warnings);
+          }
+        }
+        const choose = document.createElement('button'); choose.type = 'button'; choose.className = 'choice-button';
+        choose.setAttribute('aria-label', 'View reference for ' + record.name); choose.textContent = 'View reference'; choose.insertAdjacentHTML('beforeend', icon('arrow'));
+        choose.onclick = () => {
+          if (!validCell()) { close(); return; }
+          show(cell, {selected: record, force: true});
+          body.querySelector('.back-button')?.focus({preventScroll: true});
+        };
+        item.append(choose); list.append(item);
+      }
+      body.append(list);
+      const none = document.createElement('button'); none.type = 'button'; none.className = 'none-button'; none.textContent = 'None of these — close'; none.onclick = close; body.append(none);
+    }
+    for (const record of waitingForChoice ? [] : selected ? [selected] : result.records) {
       const group = document.createElement('article'); group.className = 'product-group'; body.append(group);
-      if (result.kind === 'candidate' || result.records.length > 1) field('Formulary product', record.name, {parent: group});
+      if (needsChoice) field('Formulary product', record.name, {parent: group});
       if (record.brand) {
         const brand = document.createElement('div'); brand.className = 'brand-line';
         const label = document.createElement('span'); label.textContent = 'Brand';
