@@ -11,27 +11,60 @@
   host.id = 'hsm-formulary-root';
   host.style.cssText = 'position:fixed;z-index:2147483647;pointer-events:none;';
   const shadow = host.attachShadow({mode: 'open'});
+  const icons = {
+    brand: '<rect x="4" y="4" width="7" height="7" rx="2" fill="currentColor" stroke="none"/><rect x="13" y="4" width="7" height="7" rx="2" fill="currentColor" stroke="none" opacity=".5"/><rect x="4" y="13" width="7" height="7" rx="2" fill="currentColor" stroke="none" opacity=".5"/><rect x="13" y="13" width="7" height="7" rx="2" fill="currentColor" stroke="none"/>',
+    close: '<path d="m6 6 12 12M6 18 18 6"/>',
+    check: '<path d="m5 12 4 4L19 6"/>',
+    indication: '<path d="M12 20s-8-4.8-8-10a4.5 4.5 0 0 1 8-3 4.5 4.5 0 0 1 8 3c0 5.2-8 10-8 10Z"/><path d="M7 12h3l1-3 2 6 1-3h3"/>',
+    dosage: '<path d="m9 15 6-6M5 19a5.7 5.7 0 0 1 0-8l6-6a5.7 5.7 0 0 1 8 8l-6 6a5.7 5.7 0 0 1-8 0Z"/>',
+    warning: '<path d="m12 3 10 18H2L12 3Zm0 6v5m0 3h.01"/>',
+    arrow: '<path d="m8 5 7 7-7 7"/>',
+    book: '<path d="M4 5a2 2 0 0 1 2-2h13v18H6a2 2 0 0 1-2-2V5Zm0 13a2 2 0 0 1 2-2h13M8 7h7m-7 4h5"/>'
+  };
+  const icon = name => `<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">${icons[name] || ''}</svg>`;
   shadow.innerHTML = `<style>
-    :host{position:fixed;z-index:2147483647;pointer-events:none}
-    section{box-sizing:border-box;pointer-events:auto;font:14px/1.5 system-ui;color:#172c3e;background:white;border:1px solid #bbc9d4;border-radius:10px;box-shadow:0 8px 32px #0003;padding:16px;overflow:auto;width:380px;max-width:calc(100vw - 16px)}
-    h3{font-size:17px;margin:0 28px 8px 0}h4{margin:12px 0 3px;color:#096d70}p{margin:0;white-space:pre-wrap}
-    button{float:right;cursor:pointer;font-size:18px;background:none;border:0;padding:0 5px;color:#526574}
-    section[hidden]{display:none}.warning{background:#fff1ce;border-left:3px solid #ad7200;padding:8px;margin:8px 0}
-  </style><section hidden role="dialog" aria-label="Hospital formulary reference"><button aria-label="Close">×</button><div></div></section>`;
+    :host{position:fixed;z-index:2147483647;pointer-events:none;color-scheme:light}
+    *{box-sizing:border-box}svg{width:17px;height:17px;flex-shrink:0}
+    .panel{pointer-events:auto;font:13px/1.65 "Segoe UI",system-ui,-apple-system,sans-serif;color:#254840;background:#fff;border:1px solid #dbe6db;border-radius:18px;box-shadow:0 18px 60px #173b3026,0 4px 12px #173b3010;overflow:auto;overscroll-behavior:contain;width:420px;max-width:calc(100vw - 16px);scrollbar-width:thin;scrollbar-color:#c7d8ca transparent}
+    .panel[hidden]{display:none}
+    .topbar{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:9px;padding:14px 19px;background:#f8faf5;border-bottom:1px solid #e8eee3}
+    .mark{display:grid;place-items:center;width:29px;height:29px;border-radius:9px;background:#186c59;color:#edffef}.mark svg{width:21px;height:21px}
+    .topbar strong{display:block;font-size:11px;font-weight:650;letter-spacing:.1px;color:#37654e}.topbar small{display:block;font-size:9px;line-height:1.5;color:#708462;letter-spacing:.25px}
+    .close{display:grid;place-items:center;margin-left:auto;align-self:flex-start;width:28px;height:28px;border:0;border-radius:8px;background:transparent;color:#8ba089;cursor:pointer}.close:hover{background:#eaf0e4;color:#335f45}.close svg{width:14px;height:14px}button:focus-visible,summary:focus-visible{outline:3px solid #7db69e;outline-offset:2px}
+    .panel-body{padding:21px 21px 10px}.medication-title{font-size:21px;line-height:1.35;letter-spacing:-.6px;font-weight:650;color:#173e33;margin:0 0 11px;overflow-wrap:anywhere}
+    .badges{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:0 0 15px}.badge{display:inline-flex;gap:5px;align-items:center;font-size:9px;font-weight:650;line-height:1.6;padding:4px 7px;border-radius:5px;background:#eaf5ea;color:#387045;letter-spacing:.1px}.badge svg{width:12px;height:12px}.badge.amber{background:#fff2d8;color:#9b6b19}.stock-note{font-size:9px;color:#77866c}
+    .brand-line{display:flex;gap:7px;align-items:baseline;padding-bottom:16px;margin-bottom:17px;border-bottom:1px solid #edf1e8}.brand-line span{font-size:9px;color:#97a28b;text-transform:uppercase;letter-spacing:1px;font-weight:600}.brand-line strong{font-size:12px;color:#657b56;font-weight:500;overflow-wrap:anywhere}
+    .reference-block{margin:0 0 18px}.field-heading{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.1px;color:#607e52;margin:0 0 8px}.field-heading svg{width:15px;height:15px;color:#87a17b}.field-value{font-size:13px;line-height:1.8;margin:0;white-space:pre-wrap;overflow-wrap:anywhere;color:#3f584b}
+    .reference-block.dosage{background:#f1f7ee;border:1px solid #e4eedf;border-radius:11px;padding:14px 15px;margin-left:-1px;margin-right:-1px}.dosage .field-heading{color:#4f7d45}.dosage .field-heading svg{color:#6a9861}.dosage .field-value{color:#395f35}
+    .reference-block.warning{background:#fff8e9;border:1px solid #f2e3c2;border-radius:11px;padding:13px 14px}.warning .field-heading{color:#9a7636}.warning .field-heading svg{color:#b18b42}.warning .field-value{color:#806237;font-size:12px}
+    .product-group+.product-group{border-top:1px solid #e5ecdf;padding-top:20px;margin-top:20px}
+    .details{border-top:1px solid #e8eee2;margin:0 0 8px;padding-top:2px}.details summary{display:flex;align-items:center;gap:7px;cursor:pointer;color:#748b64;font-size:11px;font-weight:600;list-style:none;padding:12px 0}.details summary::-webkit-details-marker{display:none}.details summary svg{width:11px;height:11px;transition:transform .15s}.details[open] summary svg{transform:rotate(90deg)}.details-content{padding:3px 0 0}.details-content .reference-block{margin-bottom:12px}.details-content .field-heading{font-size:9px;letter-spacing:.6px}.details-content .field-value{font-size:12px}
+    .panel-footer{display:flex;gap:8px;align-items:flex-start;background:#fafbf7;border-top:1px solid #e9eee3;padding:13px 21px 15px;color:#8c9c7c}.panel-footer>svg{width:14px;height:14px;margin-top:2px}.panel-footer strong{display:block;font-size:10px;line-height:1.6;font-weight:500;color:#647d54}.panel-footer p{font-size:9px;line-height:1.6;margin:4px 0 0;color:#718064}
+    @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+  </style>
+  <section class="panel" hidden role="dialog" aria-label="Hospital formulary reference">
+    <header class="topbar"><span class="mark">${icon('brand')}</span><div><strong>HSM Formulary</strong><small>Medication reference</small></div><button class="close" aria-label="Close">${icon('close')}</button></header>
+    <div class="panel-body"></div>
+    <footer class="panel-footer">${icon('book')}<div><strong class="source-date"></strong><p>Reference guidance; confirm suitability for this patient.<br>Stock availability and interactions are not checked.</p></div></footer>
+  </section>`;
   document.documentElement.append(host);
-  const panel = shadow.querySelector('section'), body = shadow.querySelector('div');
+  const panel = shadow.querySelector('section'), body = shadow.querySelector('.panel-body');
+  shadow.querySelector('.source-date').textContent = `HSM formulary · Updated ${data.updated}`;
   let timer, activeCell;
   function close() { panel.hidden = true; activeCell = null; }
   function deferClose() { clearTimeout(timer); timer = setTimeout(close, 450); }
   shadow.querySelector('button').onclick = close;
+  shadow.addEventListener('toggle', () => { if (activeCell) place(activeCell); }, true);
 
-  function field(title, value, warning = false) {
+  function field(title, value, {parent = body, tone = '', symbol = ''} = {}) {
     if (!value) return;
+    const block = document.createElement('div'); block.className = 'reference-block ' + tone;
     const heading = document.createElement('h4'), paragraph = document.createElement('p');
-    heading.textContent = title;
-    paragraph.textContent = value;
-    if (warning) paragraph.className = 'warning';
-    body.append(heading, paragraph);
+    heading.className = 'field-heading';
+    if (symbol) heading.innerHTML = icon(symbol);
+    const label = document.createElement('span'); label.textContent = title; heading.append(label);
+    paragraph.className = 'field-value'; paragraph.textContent = value;
+    block.append(heading, paragraph); parent.append(block);
   }
 
   function extractText(node) {
@@ -89,23 +122,46 @@
     activeCell = cell;
     body.replaceChildren();
     const title = document.createElement('h3');
+    title.className = 'medication-title';
     title.textContent = result.kind === 'candidate' ? 'Possible reference — confirm product' :
       result.records.length > 1 ? 'Multiple formulary matches' : result.records[0].name;
     body.append(title);
-    if (result.kind === 'candidate') field('Confirmation required', result.reason, true);
-    else field('Status', 'Listed in HSM formulary • Stock availability not checked');
-    if (result.records.length > 1) field('Choose the correct product', 'This label matches multiple records. Confirm the strength and formulation.', true);
-    for (const record of result.records) {
-      if (result.kind === 'candidate' || result.records.length > 1) field('Formulary product', record.name);
-      field('Brand', record.brand);
-      field('Indication', record.indication || 'Not provided in formulary');
-      field('Dosage reference', record.dosage || 'Not provided in formulary');
-      field('Prescribing restriction', record.restriction);
-      field('Prescriber category', record.prescriber);
-      field('Department / remarks', record.remarks);
-      field('Quota / UKK', [record.quota, record.ukk].filter(Boolean).join(' • '));
+    const badges = document.createElement('div'); badges.className = 'badges';
+    const badge = document.createElement('span'); badge.className = 'badge' + (result.kind === 'candidate' ? ' amber' : '');
+    badge.innerHTML = icon(result.kind === 'candidate' ? 'warning' : 'check');
+    const badgeText = document.createElement('span'); badgeText.textContent = result.kind === 'candidate' ? 'Confirm product and route' : 'Listed in HSM formulary';
+    badge.append(badgeText); badges.append(badge);
+    if (result.kind !== 'candidate') {
+      const note = document.createElement('span'); note.className = 'stock-note'; note.textContent = 'Stock not checked'; badges.append(note);
     }
-    field('Source', `HSM formulary • Updated ${data.updated}\nReference guidance; confirm suitability for this patient. Interactions are not checked.`);
+    body.append(badges);
+    if (result.kind === 'candidate') field('Confirmation required', result.reason, {tone: 'warning', symbol: 'warning'});
+    if (result.records.length > 1) field('Choose the correct product', 'This label matches multiple records. Confirm the strength and formulation.', {tone: 'warning', symbol: 'warning'});
+    for (const record of result.records) {
+      const group = document.createElement('article'); group.className = 'product-group'; body.append(group);
+      if (result.kind === 'candidate' || result.records.length > 1) field('Formulary product', record.name, {parent: group});
+      if (record.brand) {
+        const brand = document.createElement('div'); brand.className = 'brand-line';
+        const label = document.createElement('span'); label.textContent = 'Brand';
+        const name = document.createElement('strong'); name.textContent = record.brand; brand.append(label, name); group.append(brand);
+      }
+      field('Indication', record.indication || 'Not provided in formulary', {parent: group, symbol: 'indication'});
+      field('Dosage reference', record.dosage || 'Not provided in formulary', {parent: group, tone: 'dosage', symbol: 'dosage'});
+      field('Prescribing restriction', record.restriction, {parent: group, tone: 'warning', symbol: 'warning'});
+      const metadata = [
+        ['Prescriber category', record.prescriber],
+        ['Department / remarks', record.remarks],
+        ['Quota / UKK', [record.quota, record.ukk].filter(Boolean).join(' · ')]
+      ].filter(([, value]) => value);
+      if (metadata.length) {
+        const details = document.createElement('details'); details.className = 'details';
+        const summary = document.createElement('summary'); summary.innerHTML = icon('arrow');
+        summary.append(document.createTextNode('Prescribing details'));
+        const content = document.createElement('div'); content.className = 'details-content';
+        for (const [label, value] of metadata) field(label, value, {parent: content});
+        details.append(summary, content); group.append(details);
+      }
+    }
     panel.hidden = false;
     place(cell);
   }

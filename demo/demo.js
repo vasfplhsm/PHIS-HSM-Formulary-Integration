@@ -29,6 +29,7 @@ function appendMedication(label) {
     const cell = document.createElement('td'); cell.textContent = value; row.append(cell);
   }
   document.getElementById('rows').append(row);
+  document.getElementById('medication-count').textContent = document.querySelectorAll('#rows tr').length + ' medications';
   return row;
 }
 labels.forEach(appendMedication);

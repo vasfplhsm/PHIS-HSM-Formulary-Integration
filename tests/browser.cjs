@@ -41,8 +41,8 @@ const root = path.resolve(__dirname, '..');
       await cell.locator('.name').hover();
       await panel.waitFor({state: 'visible', timeout: 5000});
       const text = await panel.innerText();
-      assert.match(text, /Indication/);
-      assert.match(text, /Dosage reference/);
+      assert.match(text, /Indication/i);
+      assert.match(text, /Dosage reference/i);
       if (index === 4) {
         assert.match(text, /Possible reference — confirm product/);
         assert.match(text, /omits “Sublingual”/);
@@ -52,9 +52,20 @@ const root = path.resolve(__dirname, '..');
       const bounds = await panel.boundingBox();
       assert.ok(bounds.x >= 0 && bounds.y >= 0 && bounds.y + bounds.height <= 801, `Popup within viewport for row ${index}`);
       // Cursor can move from the medication into the popup and stay there.
-      await panel.getByRole('heading', {name: 'Indication', exact: true}).hover();
+      await panel.getByRole('heading', {name: /^Indication$/i}).hover();
       await page.waitForTimeout(550);
       assert.equal(await panel.isVisible(), true);
+      if (index === 0 && process.env.PHIS_SCREENSHOT_DIR) {
+        await fs.mkdir(process.env.PHIS_SCREENSHOT_DIR, {recursive: true});
+        await page.screenshot({path: path.join(process.env.PHIS_SCREENSHOT_DIR, 'medication-popup.png')});
+      }
+      if (index === 0) {
+        const details = panel.locator('details').first();
+        assert.equal(await details.locator('.details-content').isVisible(), false);
+        await details.locator('summary').click();
+        await details.getByRole('heading', {name: /Prescriber category/i}).waitFor({state: 'visible'});
+        assert.equal(await details.getAttribute('open') !== null, true);
+      }
       await page.keyboard.press('Escape');
       await panel.waitFor({state: 'hidden'});
     }
@@ -82,7 +93,7 @@ const root = path.resolve(__dirname, '..');
     await denied.addScriptTag({path: path.join(root, 'extension/content.js')});
     assert.equal(await denied.locator('#hsm-formulary-root').count(), 0);
     assert.deepEqual(errors, []);
-    console.log('PASS: eight medication labels with wrapping/icons; route warning; hover persistence; popup bounds; Escape; column scoping; dynamic keyboard focus; stale reference dismissal; origin restriction. Extension APIs mocked.');
+    console.log('PASS: eight medication labels with wrapping/icons; route warning; hover persistence; expandable prescribing details; popup bounds; Escape; column scoping; dynamic keyboard focus; stale reference dismissal; origin restriction. Extension APIs mocked.');
   } finally {
     if (browser) await browser.close();
     await new Promise(resolve => server.close(resolve));
