@@ -30,6 +30,8 @@ const root = path.resolve(__dirname, '..');
       };
     }, {data, origin});
     await page.addScriptTag({path: path.join(root, 'extension/matcher.js')});
+    await page.addScriptTag({path: path.join(root, 'extension/checks.js')});
+    await page.addScriptTag({path: path.join(root, 'extension/prescription.js')});
     await page.addScriptTag({path: path.join(root, 'extension/content.js')});
     await page.addStyleTag({path: path.join(root, 'extension/content.css')});
     const panel = page.locator('#hsm-formulary-root section');

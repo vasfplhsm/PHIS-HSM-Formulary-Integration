@@ -2,7 +2,17 @@
 
 Edge/Chrome Manifest V3 prototype. Bundles 1,025 entries from the supplied HSM CSV, recorded update date 16/07/2026. All reference processing and CSV imports stay in the browser. No analytics or remote clinical requests.
 
-## Version 0.4.0
+## Version 0.5.0
+
+### Prescription review and interaction-rule import
+
+- Amber medication text and a **Group / ingredient review** badge identify shared nonempty CSV sub-pharmacology groups. These broad categories are review flags; they do not establish therapeutic duplication or an interaction. Broad pharmacology alone is never used. This option can be disabled in settings.
+- A local ruleset import supports reviewed product-to-ingredient/class mappings and source-cited interaction pairs. Clinical details show the pair, severity, effect, action, source, ruleset version, and declared reviewer. A major/contraindicated rule produces red highlighting and a sticky alert badge; moderate/minor rules stay amber.
+- **No approved clinical interaction dataset is bundled. Drug interactions are not checked until reviewed rules are imported.** The settings page offers a blank draft template and displays the loaded ruleset's review metadata. Metadata is a declaration by the file's supplier, not independently verified approval.
+- Checks stay within one rendered prescription table exposing Drug Name and Order Detail headers. Ambiguous/fuzzy matches and hidden rows are excluded. Coverage is shown explicitly; other medicines, clinical context, and order status are not assessed. Confirm that the displayed table is the active prescription. No alert does not establish safety.
+- Row changes clear obsolete flags and refresh coverage. Prescription fields are not edited, and medication lists are not stored or sent to a remote service.
+
+See [reviewed rules format and import instructions](docs/rules-format.md).
 
 ### Possible matches
 
@@ -70,8 +80,10 @@ Use the popup to import a CSV. The parser locates the `Generic Name` header afte
 
 Detection uses generic table cells and ZK label/list-cell classes. Real PHIS DOM integration is pending a sanitised outerHTML sample. Normalised full generic names, standard release abbreviations, and full brand labels are supported. Exact matching has priority. Nonexact suggestions and ambiguous brands require an explicit product choice before clinical details are shown. Some abbreviations, misspellings, or incomplete ingredient names remain unsupported. Strength and release type are not discarded. Unknown medications receive no popup; absence of a popup is not proof that a medication is absent from the formulary. Buttons, images, hidden content, and recognised icon elements are excluded from name extraction. Other PHIS-specific markup may still need adjustment after DOM inspection. A screenshot alone cannot identify the exact selectors, frames, or event behavior used by the live system.
 
-Formulary listing does not indicate stock. Dosage is source reference text, not a patient-specific recommendation. No drug interaction checking is implemented. The dataset and clinical presentation require pharmacist review before clinical use. The extension does not alter prescriptions.
+Formulary listing does not indicate stock. Dosage is source reference text, not a patient-specific recommendation. Clinical interaction screening is available only for loaded, reviewed rules; no clinical rules are bundled. Shared CSV groups are broad review flags, not confirmed interactions. The dataset and clinical presentation require pharmacist review before clinical use. The extension does not alter prescriptions.
 
 ## Updating an unpacked installation
 
-Download the latest GitHub ZIP and extract it to a stable folder. Replace the files in the extension folder you previously loaded, then open `edge://extensions` and choose **Reload** on HSM PHIS Formulary. Check that version **0.4.0** is shown, then reload your PHIS tab. Keeping the same loaded folder preserves the extension identity and local settings. If you instead load a different folder as a new extension, disable/remove the previous copy and register your PHIS address again.
+Download the latest GitHub ZIP and extract it to a stable folder. Replace the files in the extension folder you previously loaded, then open `edge://extensions` and choose **Reload** on HSM PHIS Formulary. Check that version **0.5.0** is shown, then reload your PHIS tab. Keeping the same loaded folder preserves the extension identity and local settings. If you instead load a different folder as a new extension, disable/remove the previous copy and register your PHIS address again.
+
+Additional screening checks: `node --test tests/checks.test.cjs` runs ten engine/validation tests. `node tests/prescription-browser.cjs` checks row highlights, source explanations, coverage, scope boundaries, hidden/changed rows, and rejected draft rules with fictional medicines and synthetic rules only.

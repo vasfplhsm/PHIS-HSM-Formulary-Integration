@@ -17,7 +17,7 @@ function formatDate(value) {
 }
 
 async function render() {
-  const {sites = [], formulary} = await chrome.storage.local.get(['sites', 'formulary']);
+  const {sites = [], formulary, ruleset, broadGroups} = await chrome.storage.local.get(['sites', 'formulary', 'ruleset', 'broadGroups']);
   $('sites').replaceChildren();
   $('empty-sites').hidden = sites.length > 0;
   $('site-count').textContent = `${sites.length} ${sites.length === 1 ? 'site' : 'sites'}`;
@@ -53,6 +53,24 @@ async function render() {
   $('updated-date').textContent = formatDate(data.updated);
   $('source-label').textContent = formulary ? 'Your imported reference' : 'Bundled HSM reference';
   $('reset').disabled = !formulary;
+  $('broad-groups').checked = broadGroups !== false;
+  $('group-coverage').textContent = `${data.records.filter(record => record.subPharmacology?.trim()).length}/${data.records.length} formulary entries include a sub-pharmacology group. Broad pharmacology alone is not used.`;
+  $('rules-clear').disabled = !ruleset;
+  $('rules-summary').parentElement.classList.remove('error');
+  if (ruleset) {
+    try {
+      const checked = PhisChecks.validateRuleset(ruleset, data.records);
+      $('rules-summary').textContent = `${checked.rules.length} local interaction rules · ${checked.products.length} mapped products`;
+      $('rules-meta').textContent = `${checked.name} · ${checked.version}. Review declared by ${checked.review.by}, ${checked.review.organisation}, ${checked.review.date}. Coverage is limited to mapped products and listed rules; no alert does not establish safety.`;
+    } catch (error) {
+      $('rules-summary').textContent = 'Rules inactive for this formulary';
+      $('rules-meta').textContent = error.message;
+      $('rules-summary').parentElement.classList.add('error');
+    }
+  } else {
+    $('rules-summary').textContent = 'No interaction rules loaded';
+    $('rules-meta').textContent = 'Drug interactions are not checked until reviewed rules are imported.';
+  }
 }
 
 $('site-form').onsubmit = async event => {
@@ -93,3 +111,31 @@ $('reset').onclick = async () => {
 };
 $('version').textContent = 'v' + chrome.runtime.getManifest().version;
 render().catch(error => report(error, true));
+
+$('broad-groups').onchange = async () => {
+  try { await chrome.storage.local.set({broadGroups: $('broad-groups').checked}); report('Group review setting saved. Refresh PHIS to apply it.'); }
+  catch (error) { report(error, true); }
+};
+$('rules-file').onchange = async () => {
+  try {
+    const file = $('rules-file').files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) throw new Error('Rules file exceeds the 5 MB limit.');
+    const {formulary} = await chrome.storage.local.get('formulary');
+    const data = formulary || await (await fetch('data/formulary.json')).json();
+    const ruleset = PhisChecks.validateRuleset(JSON.parse(await file.text()), data.records);
+    await chrome.storage.local.set({ruleset});
+    report('Reviewed rules imported. Refresh PHIS to activate them.');
+    await render();
+  } catch (error) { report(error, true); }
+  finally { $('rules-file').value = ''; }
+};
+$('rules-clear').onclick = async () => {
+  try { await chrome.storage.local.remove('ruleset'); report('Rules removed. Refresh PHIS to stop using them.'); await render(); }
+  catch (error) { report(error, true); }
+};
+$('rules-template').onclick = () => {
+  const template = {schemaVersion: 1, name: 'Hospital prescription review rules', version: '1', review: {status: 'draft', by: '', organisation: '', date: ''}, source: {title: '', url: ''}, products: [], rules: []};
+  const url = URL.createObjectURL(new Blob([JSON.stringify(template, null, 2)], {type: 'application/json'}));
+  const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'HSM-rules-draft.json'; anchor.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+};

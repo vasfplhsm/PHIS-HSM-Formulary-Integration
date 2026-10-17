@@ -13,7 +13,7 @@
         <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="7" height="7" rx="2" fill="currentColor"/><rect x="13" y="4" width="7" height="7" rx="2" fill="currentColor" opacity=".5"/><rect x="4" y="13" width="7" height="7" rx="2" fill="currentColor" opacity=".5"/><rect x="13" y="13" width="7" height="7" rx="2" fill="currentColor"/></svg></span>
         <span><span class="eyebrow">PHIS companion</span><strong>HSM Formulary</strong></span>
       </a>
-      <span class="version" id="version">v0.4.0</span>
+      <span class="version" id="version">v0.5.0</span>
     </header>
 
     <main>
@@ -41,11 +41,23 @@
         <button id="reset" class="text-button" type="button"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 10a8 8 0 1 1 1 7M4 4v6h6"/></svg>Restore bundled formulary</button>
       </section>
 
+      <section class="card" aria-labelledby="checks-title">
+        <div class="card-heading"><div class="section-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m12 3 9 4v6c0 5-9 8-9 8s-9-3-9-8V7l9-4Z"/><path d="M8 12h8m-4-4v8"/></svg></div><div><h2 id="checks-title">Prescription checks</h2><p>Review flags with a visible source.</p></div></div>
+        <label class="check-toggle"><input id="broad-groups" type="checkbox" checked><span><strong>Shared formulary-group review</strong><small>Amber flags for the same CSV group. Combinations may be intentional; this is not a confirmed interaction.</small></span></label>
+        <p id="group-coverage" class="check-help"></p>
+        <div class="rules-status"><strong id="rules-summary">No interaction rules loaded</strong><p id="rules-meta">Drug interactions are not checked until reviewed rules are imported.</p></div>
+        <label class="upload-control" for="rules-file"><span class="upload-icon" aria-hidden="true">＋</span><span><strong>Import reviewed rules</strong><span>Ingredient mappings and cited interaction rules</span></span><span class="file-tag">.json</span><input id="rules-file" class="visually-hidden" type="file" accept=".json,application/json"></label>
+        <div class="rules-actions"><button id="rules-template" class="text-button" type="button">Download blank template</button><button id="rules-clear" class="text-button" type="button" disabled>Remove rules</button></div>
+        <p class="check-help">Rules must declare a clinical reviewer, organisation, review date, and sources. Review metadata is supplied by the ruleset; verify it with your clinical team. Refresh PHIS after changes.</p>
+      </section>
+
       <div class="how-to"><span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m8 3 11 9-7 1-3 7L8 3Zm5 11 4 6"/></svg></span><p><strong>Hover. Read. Keep moving.</strong>Point to a medication on PHIS to see indications, dosage guidance, and restrictions. Keyboard focus works too.</p></div>
     </main>
     <footer class="app-footer"><span class="footer-mark" aria-hidden="true">✧</span>HSM Formulary<span class="footer-divider">·</span>Reference at the point of care</footer>
   </div>
   <script src="csv.js"></script>
+  <script src="matcher.js"></script>
+  <script src="checks.js"></script>
   <script src="settings.js"></script>
 </body>
 </html>

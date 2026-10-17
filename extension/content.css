@@ -1,1 +1,9 @@
-#hsm-formulary-root { position:fixed; z-index:2147483647; }
+#hsm-formulary-root { position:fixed; z-index:2147483647; }/* Screening annotations never change prescription fields or PHIS controls. */
+[data-hsm-alert="review"] { box-shadow:inset 3px 0 #c78a24!important; }
+[data-hsm-alert="serious"] { box-shadow:inset 3px 0 #b83b3b!important; }
+[data-hsm-alert="review"], [data-hsm-alert="review"] .name, [data-hsm-alert="review"] .z-label { color:#996a18!important; }
+[data-hsm-alert="serious"], [data-hsm-alert="serious"] .name, [data-hsm-alert="serious"] .z-label { color:#b12d35!important; }
+button[data-hsm-owned="alert-badge"] { display:block!important;width:auto!important;height:auto!important;font:600 10px/1.5 "Segoe UI",system-ui,sans-serif!important;border:1px solid #e1c383!important;border-radius:5px!important;padding:3px 7px!important;margin-top:8px!important;cursor:pointer!important;color:#896018!important;background:#fff5de!important; }
+[data-hsm-alert="serious"] button[data-hsm-owned="alert-badge"] { color:#a12732!important;border-color:#e3b5ba!important;background:#fff0f1!important; }
+button[data-hsm-owned="alert-badge"]:focus-visible { outline:2px solid currentColor!important;outline-offset:2px!important; }
+[data-hsm-owned="coverage"] { font:11px/1.65 "Segoe UI",system-ui,sans-serif!important;color:#6a715e!important;background:#f5f7ef!important;border:1px solid #e1e7d8!important;border-radius:8px!important;padding:10px 13px!important;margin:8px 0!important;white-space:normal!important; }

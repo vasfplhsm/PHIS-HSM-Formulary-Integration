@@ -4,6 +4,7 @@
   window.__hsmFormulary = true;
   const data = await chrome.runtime.sendMessage({type: 'formulary'});
   if (!data) return;
+  await window.PhisPrescription?.ready;
   const lookup = PhisMatcher.createMatcher(data.records);
   const cellSelector = 'td,[role="cell"],.z-listcell,[data-medication]';
   const ignoredSelector = 'button,input,select,textarea,script,style,svg,img,[role="button"],[aria-hidden="true"],[hidden],.z-icon,.z-image';
@@ -38,6 +39,8 @@
     .reference-block{margin:0 0 18px}.field-heading{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.1px;color:#607e52;margin:0 0 8px}.field-heading svg{width:15px;height:15px;color:#87a17b}.field-value{font-size:13px;line-height:1.8;margin:0;white-space:pre-wrap;overflow-wrap:anywhere;color:#3f584b}
     .reference-block.dosage{background:#f1f7ee;border:1px solid #e4eedf;border-radius:11px;padding:14px 15px;margin-left:-1px;margin-right:-1px}.dosage .field-heading{color:#4f7d45}.dosage .field-heading svg{color:#6a9861}.dosage .field-value{color:#395f35}
     .reference-block.warning{background:#fff8e9;border:1px solid #f2e3c2;border-radius:11px;padding:13px 14px}.warning .field-heading{color:#9a7636}.warning .field-heading svg{color:#b18b42}.warning .field-value{color:#806237;font-size:12px}
+    .reference-block.serious{background:#fff1f2;border:1px solid #edc1c5;border-radius:11px;padding:13px 14px}.serious .field-heading,.serious .field-heading svg{color:#a42f39}.serious .field-value{color:#8c3540;font-size:12px}
+    .badge.red{background:#fff0f1;color:#a42f39}
     .product-group+.product-group{border-top:1px solid #e5ecdf;padding-top:20px;margin-top:20px}
     .suggestion-list{display:grid;gap:11px;margin-bottom:15px}.suggestion-card{border:1px solid #e0e8d9;border-radius:12px;padding:14px;background:#fcfdf9}.suggestion-name{font-size:14px;font-weight:600;line-height:1.5;color:#315741;margin:0 0 5px;overflow-wrap:anywhere}.suggestion-brand,.suggestion-reason{font-size:11px;color:#728267;line-height:1.6;margin:4px 0}.suggestion-warnings{font-size:11px;line-height:1.65;color:#956b27;margin:8px 0;padding-left:17px}.choice-button{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:9px 12px;margin-top:12px;background:#edf5e8;color:#386245;border:1px solid #d4e4cd;border-radius:8px;font:600 11px/1.5 "Segoe UI",system-ui,sans-serif;cursor:pointer}.choice-button:hover{background:#dfeeda}.choice-button svg{width:12px;height:12px}.back-button,.none-button{border:0;background:none;color:#617d53;font:500 11px/1.6 "Segoe UI",system-ui,sans-serif;cursor:pointer;padding:5px 0;margin:0 0 14px;text-align:left}.back-button:hover,.none-button:hover{text-decoration:underline}.detected-label{font-size:10px;line-height:1.6;color:#748468;margin:8px 0 0;overflow-wrap:anywhere}.suggestion-count{font-size:10px;color:#7d8d70;margin:0 0 12px}
     .details{border-top:1px solid #e8eee2;margin:0 0 8px;padding-top:2px}.details summary{display:flex;align-items:center;gap:7px;cursor:pointer;color:#748b64;font-size:11px;font-weight:600;list-style:none;padding:12px 0}.details summary::-webkit-details-marker{display:none}.details summary svg{width:11px;height:11px;transition:transform .15s}.details[open] summary svg{transform:rotate(90deg)}.details-content{padding:3px 0 0}.details-content .reference-block{margin-bottom:12px}.details-content .field-heading{font-size:9px;letter-spacing:.6px}.details-content .field-value{font-size:12px}
@@ -47,7 +50,7 @@
   <section class="panel" hidden role="dialog" aria-label="Hospital formulary reference">
     <header class="sticky-header"><div class="topbar"><span class="mark">${icon('brand')}</span><div><strong>HSM Formulary</strong><small>Medication reference</small></div><button class="close" aria-label="Close">${icon('close')}</button></div><div class="title-block"></div></header>
     <div class="panel-body"></div>
-    <footer class="panel-footer">${icon('book')}<div><strong class="source-date"></strong><p>Reference guidance; confirm suitability for this patient.<br>Stock availability and interactions are not checked.</p></div></footer>
+    <footer class="panel-footer">${icon('book')}<div><strong class="source-date"></strong><p class="screening-status"></p><p>Reference guidance; confirm suitability for this patient. Stock availability is not checked.</p></div></footer>
   </section>`;
   document.documentElement.append(host);
   const panel = shadow.querySelector('section'), body = shadow.querySelector('.panel-body');
@@ -55,9 +58,22 @@
   shadow.querySelector('.source-date').textContent = `HSM formulary · Updated ${data.updated}`;
   let timer, activeCell;
   function close() { panel.hidden = true; activeCell = null; }
+  function updateScreeningStatus(cell) {
+    const screening = window.PhisPrescription?.forCell(cell);
+    shadow.querySelector('.screening-status').textContent = screening ? screening.status + ' ' + screening.coverage : 'Prescription scope is not recognised. Drug interactions are not checked here.';
+  }
+  document.addEventListener('hsm-screening-updated', event => {
+    if (!activeCell) return;
+    if (Array.isArray(event.detail?.affectedCells) && event.detail.affectedCells.includes(activeCell)) close();
+    else updateScreeningStatus(activeCell);
+  });
   function deferClose() { clearTimeout(timer); timer = setTimeout(close, 450); }
   shadow.querySelector('button').onclick = close;
   shadow.addEventListener('toggle', () => { if (activeCell) place(activeCell); }, true);
+  document.addEventListener('hsm-open-reference', event => {
+    const cell = medicationCell(event.target);
+    if (cell) show(cell, {force: true});
+  });
 
   function field(title, value, {parent = body, tone = '', symbol = ''} = {}) {
     if (!value) return;
@@ -145,6 +161,18 @@
       const note = document.createElement('span'); note.className = 'stock-note'; note.textContent = 'Stock not checked'; badges.append(note);
     }
     titleBlock.append(badges);
+    const screening = window.PhisPrescription?.forCell(cell);
+    updateScreeningStatus(cell);
+    if (screening?.alerts.length) {
+      const serious = screening.alerts.some(alert => ['major', 'contraindicated'].includes(alert.severity));
+      const screeningBadge = document.createElement('span'); screeningBadge.className = 'badge ' + (serious ? 'red' : 'amber');
+      screeningBadge.textContent = serious ? 'Interaction alert' : 'Prescription review flag'; badges.append(screeningBadge);
+      for (const alert of screening.alerts) {
+        const serious = ['major', 'contraindicated'].includes(alert.severity);
+        const review = alert.review ? `\nRuleset: ${alert.ruleset}\nReview declared by ${alert.review.by}, ${alert.review.organisation}, ${alert.review.date}.` : '';
+        field(alert.title, `${alert.medicines.join(' + ')}\n${alert.summary}\n${alert.action}\nSource: ${alert.source.title}${alert.source.url ? '\n' + alert.source.url : ''}${review}`, {tone: serious ? 'serious' : 'warning', symbol: 'warning'});
+      }
+    }
     function validCell() {
       return activeCell === cell && cell.isConnected && extractText(cell).trim().replace(/\s+/g, ' ') === detectedText;
     }

@@ -7,7 +7,7 @@ const manifest = require('../extension/manifest.json');
 const root = path.resolve(__dirname, '..');
 
 (async () => {
-  const files = {'/': 'settings.html', '/settings.html': 'settings.html', '/settings.css': 'settings.css', '/settings.js': 'settings.js', '/csv.js': 'csv.js', '/data/formulary.json': 'data/formulary.json'};
+  const files = {'/': 'settings.html', '/settings.html': 'settings.html', '/settings.css': 'settings.css', '/settings.js': 'settings.js', '/csv.js': 'csv.js', '/matcher.js': 'matcher.js', '/checks.js': 'checks.js', '/data/formulary.json': 'data/formulary.json'};
   const server = http.createServer(async (req, res) => {
     const file = files[req.url];
     if (!file) { res.writeHead(404).end(); return; }
@@ -63,6 +63,24 @@ const root = path.resolve(__dirname, '..');
     await page.waitForFunction(() => document.querySelectorAll('.site-row').length === 0);
     assert.deepEqual(await page.evaluate(() => window.__removed), [{origins: ['http://10.138.118.11/*']}]);
 
+    assert.equal(await page.locator('#rules-summary').textContent(), 'No interaction rules loaded');
+    await page.locator('#broad-groups').uncheck();
+    await page.waitForFunction(() => window.__state.broadGroups === false);
+    await page.locator('#broad-groups').check();
+    const rules = {schemaVersion: 1, name: 'SYNTHETIC TEST ONLY', version: '1', review: {status: 'approved', by: 'Test reviewer', organisation: 'Test organisation', date: '2026-01-01'}, source: {title: 'Synthetic fixture', url: 'https://example.test/fixture'}, products: [{name: 'Perindopril 4 mg Tablet', ingredients: ['test-a'], classes: ['Synthetic class']}, {name: 'Bisoprolol Fumarate 2.5 mg Tablet', ingredients: ['test-b'], classes: ['Synthetic class']}], rules: [{id: 'synthetic', ingredients: ['test-a','test-b'], severity: 'major', summary: 'Synthetic test effect; not clinical data.', action: 'Synthetic test action.', source: {title: 'Synthetic fixture', url: 'https://example.test/fixture'}}]};
+    const draft = structuredClone(rules); draft.review.status = 'draft';
+    await page.locator('#rules-file').setInputFiles({name: 'draft.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(draft))});
+    await page.locator('#status.error').waitFor();
+    assert.equal(await page.locator('#rules-summary').textContent(), 'No interaction rules loaded');
+    await page.locator('#rules-file').setInputFiles({name: 'synthetic.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(rules))});
+    await page.waitForFunction(() => document.getElementById('rules-summary').textContent.includes('1 local interaction rules'));
+    assert.match(await page.locator('#rules-meta').textContent(), /Test reviewer/);
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', {name: 'Download blank template'}).click();
+    const download = await downloadPromise;
+    const template = JSON.parse(await fs.readFile(await download.path(), 'utf8'));
+    assert.equal(template.review.status, 'draft'); assert.deepEqual(template.rules, []);
+
     await page.locator('#csv').setInputFiles({name: 'bad.csv', mimeType: 'text/csv', buffer: Buffer.from('Missing,Columns\n1,2')});
     await page.locator('#status.error').waitFor();
     assert.equal(await page.locator('#record-count').textContent(), '1,025', 'Invalid CSV preserves reference');
@@ -70,9 +88,12 @@ const root = path.resolve(__dirname, '..');
     await page.waitForFunction(() => document.getElementById('record-count').textContent === '1');
     assert.equal(await page.locator('#source-label').textContent(), 'Your imported reference');
     assert.equal(await page.locator('#updated-date').textContent(), '20 Jul 2026');
+    assert.equal(await page.locator('#rules-summary').textContent(), 'Rules inactive for this formulary');
     await page.getByRole('button', {name: 'Restore bundled formulary'}).click();
     await page.waitForFunction(() => document.getElementById('record-count').textContent === '1,025');
 
+    await page.getByRole('button', {name: 'Remove rules', exact: true}).click();
+    await page.waitForFunction(() => document.getElementById('rules-summary').textContent === 'No interaction rules loaded');
     await page.getByLabel('Hospital address').fill('http://phis.phishsm.moh.gov.my:8080');
     await page.getByRole('button', {name: 'Enable site'}).click();
     await page.waitForFunction(() => document.querySelectorAll('.site-row').length === 1);
