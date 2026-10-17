@@ -19,10 +19,12 @@
     if (new Set(values.map(key)).size !== values.length) throw new Error(label + ' contains duplicates.');
     return values;
   }
-  function validateRuleset(raw, records) {
+  function validateRuleset(raw, records, {allowDemo = false} = {}) {
     if (!raw || raw.schemaVersion !== 1) throw new Error('Unsupported ruleset schema; expected schemaVersion 1.');
-    if (raw.review?.status !== 'approved') throw new Error('This ruleset is a draft. A clinical reviewer must approve its content before import.');
-    const review = {status: 'approved', by: text(raw.review.by, 'Reviewer', 200), organisation: text(raw.review.organisation, 'Reviewing organisation', 200), date: text(raw.review.date, 'Review date', 10)};
+    const demo = raw.purpose === 'synthetic-demo' && raw.review?.status === 'demo' && allowDemo;
+    if (raw.purpose === 'synthetic-demo' && !demo) throw new Error('Demo fixtures cannot be imported as clinical rules. Use them only in the local PHIS dummy.');
+    if (!demo && raw.review?.status !== 'approved') throw new Error('This ruleset is a draft. A clinical reviewer must approve its content before import.');
+    const review = {status: demo ? 'demo' : 'approved', by: text(raw.review.by, 'Reviewer', 200), organisation: text(raw.review.organisation, 'Reviewing organisation', 200), date: text(raw.review.date, 'Review date', 10)};
     if (!/^\d{4}-\d{2}-\d{2}$/.test(review.date) || !Number.isFinite(Date.parse(review.date)) || new Date(review.date).toISOString().slice(0, 10) !== review.date) throw new Error('Review date must be a valid YYYY-MM-DD date.');
     if (!Array.isArray(raw.products) || !raw.products.length || raw.products.length > 10000) throw new Error('Products must contain 1–10,000 reviewed formulary mappings.');
     if (!Array.isArray(raw.rules) || raw.rules.length > 20000) throw new Error('Rules must be a list with at most 20,000 entries.');
@@ -48,7 +50,7 @@
       if (!['contraindicated', 'major', 'moderate', 'minor'].includes(rule.severity)) throw new Error('Rule severity is invalid.');
       return {id, ingredients: pair, severity: rule.severity, summary: text(rule.summary, 'Rule clinical effect'), action: text(rule.action, 'Rule recommended action'), source: source(rule.source, 'Rule')};
     });
-    const result = {schemaVersion: 1, name: text(raw.name, 'Ruleset name', 200), version: text(raw.version, 'Ruleset version', 100), review, source: source(raw.source, 'Ruleset'), products, rules};
+    const result = {schemaVersion: 1, purpose: demo ? 'synthetic-demo' : 'clinical', name: text(raw.name, 'Ruleset name', 200), version: text(raw.version, 'Ruleset version', 100), review, source: source(raw.source, 'Ruleset'), products, rules};
     validated.add(result);
     return result;
   }

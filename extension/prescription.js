@@ -9,8 +9,10 @@
     const [data, config] = await Promise.all([chrome.runtime.sendMessage({type: 'formulary'}), chrome.runtime.sendMessage({type: 'checksConfig'})]);
     const lookup = PhisMatcher.createMatcher(data.records), summaries = new WeakMap();
     let ruleset = null, rulesError = '';
+    const demoAllowed = config?.demoMode === true && document.documentElement.dataset.phisDemo === 'true' &&
+      (location.protocol === 'file:' || ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname));
     if (config?.ruleset) {
-      try { ruleset = PhisChecks.validateRuleset(config.ruleset, data.records); }
+      try { ruleset = PhisChecks.validateRuleset(config.ruleset, data.records, {allowDemo: demoAllowed}); }
       catch (error) { rulesError = error.message; }
     }
     const ignored = 'button,input,select,textarea,script,style,svg,img,[role="button"],[aria-hidden="true"],[hidden],.z-icon,.z-image,[data-hsm-owned]';
@@ -44,7 +46,8 @@
           return {id, record: ['generic', 'brand'].includes(result.kind) && result.records.length === 1 ? result.records[0] : null};
         });
         const result = PhisChecks.analyze(rows, ruleset, {broadGroups: config?.broadGroups !== false, updated: data.updated});
-        const status = result.rulesCount ? `${result.rulesCount} local interaction rules · ${result.unmappedRows}/${result.totalRows} rows not mapped. Rule coverage is limited; no alert does not establish safety.` : 'No interaction rules loaded: drug interactions are not checked.';
+        const status = (ruleset?.purpose === 'synthetic-demo' ? 'DEMO ONLY — synthetic interaction fixtures. ' : '') +
+          (result.rulesCount ? `${result.rulesCount} local interaction rules · ${result.unmappedRows}/${result.totalRows} rows not mapped. Rule coverage is limited; no alert does not establish safety.` : 'No interaction rules loaded: drug interactions are not checked.');
         const coverage = `${result.resolvedRows}/${result.totalRows} rows recognised; ${result.missingGroups} recognised rows have no formulary group. This rendered table only; hidden/other medicines and order status are not assessed. Confirm this is the active prescription.`;
         for (let i = 0; i < cells.length; i++) {
           const cell = cells[i], alerts = result.alerts.filter(alert => alert.rows.includes(i));

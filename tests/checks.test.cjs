@@ -1,4 +1,4 @@
-const {test}=require('node:test');const assert=require('node:assert/strict');require('../extension/matcher');
+const fs=require('node:fs');const {test}=require('node:test');const assert=require('node:assert/strict');require('../extension/matcher');
 const {validateRuleset,analyze}=require('../extension/checks');
 const records=[{name:'Example Alpha 10 mg Tablet',pharmacology:'Synthetic',subPharmacology:'Shared test category'},{name:'Example Beta 5 mg Tablet',pharmacology:'Synthetic',subPharmacology:'Shared test category'},{name:'Example Gamma 1 mg Tablet',pharmacology:'Synthetic',subPharmacology:''}];
 function fixture(){return {schemaVersion:1,name:'SYNTHETIC TEST ONLY',version:'1',review:{status:'approved',by:'Test reviewer',organisation:'Test organisation',date:'2026-01-01'},source:{title:'Synthetic test fixture, not clinical data',url:'https://example.test/test'},products:records.slice(0,2).map((r,i)=>({name:r.name,ingredients:[['alpha','beta'][i]],classes:['Test class']})),rules:[{id:'synthetic-pair',ingredients:['alpha','beta'],severity:'major',summary:'Synthetic effect, not clinical advice.',action:'Synthetic test action.',source:{title:'Synthetic source, not clinical evidence',url:'https://example.test/test-rule'}}]};}
@@ -13,3 +13,17 @@ test('raw, draft, unreviewed, unmapped, and duplicate product data cannot run',(
 test('rules require explicit supported severity, action, distinct mapped ingredients and safe sources',()=>{for(const mutate of [r=>r.rules[0].severity='dangerous',r=>r.rules[0].action='',r=>r.rules[0].ingredients=['alpha','alpha'],r=>r.rules[0].ingredients=['alpha','unmapped'],r=>r.rules[0].source.url='javascript:alert(1)',r=>r.source.url='https://user:password@example.test']){const raw=fixture();mutate(raw);assert.throws(()=>validateRuleset(raw,records))}});
 test('duplicate formulary names make a reviewed product mapping invalid',()=>{assert.throws(()=>validateRuleset(fixture(),[...records,records[0]]),/uniquely match/)});
 test('combination products trigger each applicable pair once across rows',()=>{const raw=fixture();raw.products[0].ingredients=['alpha','beta'];const result=analyze(rows,validateRuleset(raw,records));assert.equal(result.alerts.filter(a=>a.type==='interaction').length,1);assert.equal(analyze([rows[0]],validateRuleset(raw,records)).alerts.length,0)});
+test('demo fixtures require explicit demo validation and cannot impersonate approved clinical rules',()=>{
+ require('../demo/scenarios');const demo=globalThis.PhisDemoFixtures;
+ assert.throws(()=>validateRuleset(demo.ruleset,demo.records),/Demo fixtures/);
+ const checked=validateRuleset(demo.ruleset,demo.records,{allowDemo:true});
+ assert.equal(checked.review.status,'demo');assert.equal(checked.purpose,'synthetic-demo');
+ assert.equal(analyze(demo.records.map((record,id)=>({id,record})),checked).alerts.filter(a=>a.severity==='major').length,2);
+ const disguised=structuredClone(demo.ruleset);disguised.review.status='approved';
+ assert.throws(()=>validateRuleset(disguised,demo.records,{allowDemo:true}),/Demo fixtures/);
+});
+test('offline demo snapshot contains exactly the source formulary',()=>{
+ const vm=require('node:vm');const context={};vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../demo/data/formulary.js'),'utf8'),context);
+ assert.equal(JSON.stringify(context.PhisDemoFormulary),JSON.stringify(require('../extension/data/formulary.json')));
+ assert.equal(context.PhisDemoBuild.version,require('../extension/manifest.json').version);
+});

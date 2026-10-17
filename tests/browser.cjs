@@ -12,7 +12,7 @@ const root = path.resolve(__dirname, '..');
     if (!file) { res.writeHead(404).end(); return; }
     const types = {'.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css'};
     res.setHeader('Content-Type', types[path.extname(file)]);
-    res.end(await fs.readFile(path.join(root, 'demo', file)));
+    res.end(await fs.readFile(path.join(root, 'tests/fixtures/reference', file)));
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   let browser;

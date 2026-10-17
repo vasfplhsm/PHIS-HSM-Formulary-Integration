@@ -2,7 +2,19 @@
 
 Edge/Chrome Manifest V3 prototype. Bundles 1,025 entries from the supplied HSM CSV, recorded update date 16/07/2026. All reference processing and CSV imports stay in the browser. No analytics or remote clinical requests.
 
-## Version 0.5.0
+## Version 0.6.0 — PHIS dummy and test console
+
+Download the [latest ZIP](https://github.com/vasfplhsm/PHIS-HSM-Formulary-Integration/archive/refs/heads/main.zip), extract it, and open **OPEN-DEMO.html** in Edge. The built-in preview needs no extension installation. The page approximates the supplied PHIS screenshot: blue section bars, collection fields, icons, and a yellow prescription grid, with fictional patient and order details.
+
+Choose **Major interaction 1 · DEMO ONLY** to see red medication names, then click **Interaction alert**. Twelve presets cover two major pairs, a contraindicated pair, multiple severities, moderate alerts, shared formulary groups, imperfect names, ambiguous brands, unknown medicines, missing rules, and separate prescriptions. Add, edit, hide, restore, or remove rows to check live updates. The scrollable reference keeps the medication title visible. A settings sandbox lets you try CSV import without changing your installed extension.
+
+**The interaction examples use fictional DEMO products and synthetic rules, with no clinical claims or approval.** They are confined to the local preview. The normal clinical rules importer rejects them. Real medicine references still come from the supplied HSM formulary; no approved interaction database is bundled.
+
+See the [demo launch guide and scenario checklist](docs/demo-guide.md), including the local-server fallback if your browser blocks opening HTML files.
+
+![PHIS-style dummy with fictional interaction alerts](docs/previews/phis-dummy-alerts.png)
+
+## Prescription review and reference features
 
 ### Prescription review and interaction-rule import
 
@@ -29,7 +41,7 @@ When no exact generic or brand label matches, a local, conservative name compari
 
 The medication name, match status, and close button stay visible while you scroll the reference. Opening a different medication starts at the top of its information.
 
-A refreshed interface for the extension and demo: soft green and teal colours, a matching toolbar icon, clearer typography, and responsive settings cards. The medication popup separates indications, dosage guidance, and restrictions, with administrative information under **Prescribing details**. Product/route confirmation remains prominent for uncertain matches. Fonts and icons are bundled or supplied by the system; the interface does not load remote assets.
+The extension uses soft green and teal colours, a matching toolbar icon, clearer typography, and responsive settings cards. The PHIS dummy retains the original blue/yellow layout for testing. The medication popup separates indications, dosage guidance, and restrictions, with administrative information under **Prescribing details**. Product/route confirmation remains prominent for uncertain matches. Fonts and icons are bundled or supplied by the system; the interface does not load remote assets.
 
 Settings now show the active source, formatted update date, medication count, connected sites, and clear import/permission status. Addresses without a scheme use HTTP. Removing one port preserves access for other registered origins on the same host.
 
@@ -47,7 +59,7 @@ These screenshots use synthetic demo orders and simulated extension API bindings
 
 ## Medication detection (introduced in 0.2.0)
 
-The demo now uses the seven medication labels visible in the supplied PHIS screenshot, with synthetic orders and icons. No patient or prescriber details from the screenshot are included. Wrapped labels and non-medication icons are handled separately. When table headers are available, detection is restricted to the Drug Name column. Recognised cells become keyboard-focusable, including dynamically replaced rows. Popups prefer the side of the medication column and dismiss stale references when rows change.
+The original-screen preset uses the seven medication labels visible in the supplied PHIS screenshot, plus a reference example, with synthetic orders and icons. No patient or prescriber details from the screenshot are included. Wrapped labels and non-medication icons are handled separately. When table headers are available, detection is restricted to the Drug Name column. Recognised cells become keyboard-focusable, including dynamically replaced rows. Popups prefer the side of the medication column and dismiss stale references when rows change.
 
 - `Trimetazidine 35 mg MODIFIED RELEASE Tablet` matches the formulary's `Trimetazidine 35mg MR Tablet`. Standard full phrases for modified, sustained, and extended release map to MR, SR, and ER respectively; these release types remain distinct.
 - `Glyceryl Trinitrate 0.5 mg Tablet` appears only as a **possible reference**, because the formulary specifies **Sublingual Tablet**. The popup asks the user to confirm route and product. It does not identify that PHIS label as a confirmed formulary match.
@@ -64,13 +76,18 @@ Chrome uses `chrome://extensions` with the same steps. Addresses are configurabl
 
 ## Demo and checks
 
-Run `python -m http.server 8080 --directory demo` from this repository. Register `http://localhost:8080` in the extension and reload the demo. Hover Dexlansoprazole; use **Simulate prescription update** to test a newly added row. Choose **Try imperfect names** to append example misspelled and shortened labels; hover them to try candidate selection.
+Open **OPEN-DEMO.html** from the extracted repository for the self-contained preview, or follow the [local-server instructions](docs/demo-guide.md). The preview runs the actual matching, prescription, and popup scripts with in-memory browser API bindings. No real browser permissions are granted. The separate settings sandbox resets when reloaded; its imports do not change the prescription preview or installed extension.
 
-Run `node --test tests/formulary.test.cjs` for the twenty data, matching, and CSV tests, including typo/prefix suggestions, omitted-detail warnings, incompatible strengths/concentrations/forms/releases/routes/salts, ingredient boundaries, and bounded results. Optional browser regression: with Playwright 1.62.1 and Chromium installed, run `node tests/browser.cjs`; it starts and stops its own local demo server. Set `CHROMIUM_PATH` if Chromium is not at `/usr/bin/chromium`. That browser test mocks extension APIs and verifies all seven screenshot labels plus a reference example, route confirmation, icon filtering, hover persistence, popup bounds, Escape, column scoping, dynamic keyboard focus, stale reference dismissal, and exact-origin restrictions. It also verifies expandable prescribing details, sticky titles during scrolling, candidate selection using keyboard and mouse, clinical details hidden before selection, switching/back/dismissal, nonpersistent choices, and ambiguous brands. It does not verify installed extension permissions.
+Run `node --test tests/formulary.test.cjs tests/checks.test.cjs` for 32 data, matching, CSV, rule-engine, and demo-isolation tests. Run `node scripts/build-demo.cjs` after changing extension or demo sources to refresh the self-contained HTML, offline formulary snapshot, and settings sandbox.
 
-Run `node tests/settings-browser.cjs` with the same browser prerequisites to check the settings at popup, small-screen, and full-page sizes, permission denial/registration, shared-host removal, CSV import/rejection/restore, and source metadata. This suite also uses simulated extension APIs. Both browser suites start and stop their own local servers. Optional: set `PHIS_SCREENSHOT_DIR` to save screenshots during these runs.
+With Playwright 1.62.1 and Chromium available, run these four browser suites. Each starts and stops its own local server; set `CHROMIUM_PATH` if Chromium is not at `/usr/bin/chromium`, or `PHIS_SCREENSHOT_DIR` to save screenshots.
 
-Actual unpacked-extension loading could not be tested on the cloud machine: its Chromium policy disables loading unpacked extensions. Test the install/enable/reload flow in your authorised Edge environment.
+- `node tests/demo-browser.cjs`: shipped dummy and self-contained HTML, all 12 presets, red/amber flags, scrolling, candidate choice, row changes, table boundaries, missing rules, downloads, settings sandbox, and isolation from hospital origins. The page requests no external runtime resources. Direct `file://` navigation is explicitly skipped when managed Chromium policy blocks it; the same HTML is tested over loopback HTTP.
+- `node tests/browser.cjs`: reference popup regression fixture, screenshot medication labels, route confirmation, icon filtering, bounds, keyboard/mouse choices, sticky scrolling, dynamic focus, stale references, and origin/column restrictions.
+- `node tests/settings-browser.cjs`: responsive settings, simulated permission denial/registration, shared-host removal, CSV validation/import/restore, rule import/removal, draft rejection, and source metadata.
+- `node tests/prescription-browser.cjs`: shared-group flags, synthetic pair alerts, source explanations, coverage, scope boundaries, hidden/changed rows, and rejected draft rules.
+
+The browser suites use simulated extension APIs. Cloud Chromium policy blocks direct local-file navigation and unpacked-extension loading, so double-click launching and native installation/permission prompts remain unverified. Live PHIS integration still awaits sanitised HTML from the hospital screen.
 
 ## CSV updates
 
@@ -84,6 +101,4 @@ Formulary listing does not indicate stock. Dosage is source reference text, not 
 
 ## Updating an unpacked installation
 
-Download the latest GitHub ZIP and extract it to a stable folder. Replace the files in the extension folder you previously loaded, then open `edge://extensions` and choose **Reload** on HSM PHIS Formulary. Check that version **0.5.0** is shown, then reload your PHIS tab. Keeping the same loaded folder preserves the extension identity and local settings. If you instead load a different folder as a new extension, disable/remove the previous copy and register your PHIS address again.
-
-Additional screening checks: `node --test tests/checks.test.cjs` runs ten engine/validation tests. `node tests/prescription-browser.cjs` checks row highlights, source explanations, coverage, scope boundaries, hidden/changed rows, and rejected draft rules with fictional medicines and synthetic rules only.
+Download the latest GitHub ZIP and extract it to a stable folder. Replace the files in the extension folder you previously loaded, then open `edge://extensions` and choose **Reload** on HSM PHIS Formulary. Check that version **0.6.0** is shown, then reload your PHIS tab. Keeping the same loaded folder preserves the extension identity and local settings. If you instead load a different folder as a new extension, disable/remove the previous copy and register your PHIS address again.

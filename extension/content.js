@@ -55,7 +55,7 @@
   document.documentElement.append(host);
   const panel = shadow.querySelector('section'), body = shadow.querySelector('.panel-body');
   const titleBlock = shadow.querySelector('.title-block');
-  shadow.querySelector('.source-date').textContent = `HSM formulary · Updated ${data.updated}`;
+  shadow.querySelector('.source-date').textContent = data.demoOnly ? 'LOCAL DEMO · HSM reference + fictional test products' : `HSM formulary · Updated ${data.updated}`;
   let timer, activeCell;
   function close() { panel.hidden = true; activeCell = null; }
   function updateScreeningStatus(cell) {
@@ -142,6 +142,7 @@
     activeCell = cell;
     const detectedText = extractText(cell).trim().replace(/\s+/g, ' ');
     const needsChoice = ['possible', 'candidate'].includes(result.kind) || result.records.length > 1;
+    const demoProduct = data.demoOnly && (selected ? selected.demoOnly : result.records.every(record => record.demoOnly));
     const waitingForChoice = needsChoice && !selected;
     body.replaceChildren();
     titleBlock.replaceChildren();
@@ -155,10 +156,11 @@
     badge.innerHTML = icon(needsConfirmation ? 'warning' : 'check');
     const badgeText = document.createElement('span'); badgeText.textContent = selected ? 'Selected reference — verify product' :
       result.kind === 'possible' ? 'Possible matches — choose a product' : result.kind === 'candidate' ? 'Possible reference — confirm product' :
-      result.records.length > 1 ? 'Multiple formulary matches' : 'Listed in HSM formulary';
+      result.records.length > 1 ? (demoProduct ? 'Multiple demo matches' : 'Multiple formulary matches') :
+      demoProduct ? 'Fictional demo product' : 'Listed in HSM formulary';
     badge.append(badgeText); badges.append(badge);
     if (!needsChoice) {
-      const note = document.createElement('span'); note.className = 'stock-note'; note.textContent = 'Stock not checked'; badges.append(note);
+      const note = document.createElement('span'); note.className = 'stock-note'; note.textContent = demoProduct ? 'UI fixture only' : 'Stock not checked'; badges.append(note);
     }
     titleBlock.append(badges);
     const screening = window.PhisPrescription?.forCell(cell);
@@ -169,7 +171,8 @@
       screeningBadge.textContent = serious ? 'Interaction alert' : 'Prescription review flag'; badges.append(screeningBadge);
       for (const alert of screening.alerts) {
         const serious = ['major', 'contraindicated'].includes(alert.severity);
-        const review = alert.review ? `\nRuleset: ${alert.ruleset}\nReview declared by ${alert.review.by}, ${alert.review.organisation}, ${alert.review.date}.` : '';
+        const review = alert.review?.status === 'demo' ? '\nDEMO ONLY: simulated severity for interface testing. No clinical review or clinical evidence.' :
+          alert.review ? `\nRuleset: ${alert.ruleset}\nReview declared by ${alert.review.by}, ${alert.review.organisation}, ${alert.review.date}.` : '';
         field(alert.title, `${alert.medicines.join(' + ')}\n${alert.summary}\n${alert.action}\nSource: ${alert.source.title}${alert.source.url ? '\n' + alert.source.url : ''}${review}`, {tone: serious ? 'serious' : 'warning', symbol: 'warning'});
       }
     }

@@ -1,28 +1,31 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HSM PHIS · Formulary workspace</title>
-  <link rel="stylesheet" href="demo.css">
-</head>
+<html lang="en" data-phis-demo="true">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>PHIS Dummy · Local training screen</title><link rel="stylesheet" href="demo.css"></head>
 <body>
-  <header class="navigation"><a class="wordmark" href="index.html"><span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2" opacity=".5"/><rect x="4" y="13" width="7" height="7" rx="2" opacity=".5"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg></span><strong>HSM Formulary</strong><span class="nav-divider"></span><span class="workspace-label">PHIS companion</span></a><span class="prototype-badge"><span></span>Prototype 0.5.0</span></header>
-  <main>
-    <section class="welcome"><div><span class="eyebrow">YOUR MEDICATION WORKSPACE</span><h1>Good information.<br>Better at a glance.</h1><p>Indications, dosage guidance, and prescribing details.<br>A little closer to every medication.</p></div><div class="reference-card"><span class="reference-label">HOSPITAL REFERENCE</span><strong>1,025<span>medications</span></strong><div class="reference-meta"><span class="live-dot"></span> HSM formulary<span class="meta-date">16 Jul 2026</span></div></div></section>
-    <aside class="connection-note"><span class="note-icon" aria-hidden="true">i</span><p><strong>Try the hover experience.</strong> Enable this page’s origin in the extension, refresh, then hover or focus a medication below.</p><span class="local-tag">Local processing</span></aside>
-    <section class="prescription-card" aria-labelledby="prescription-title">
-      <div class="table-toolbar"><div><span class="eyebrow">REFERENCE PREVIEW</span><h2 id="prescription-title">Prescription<span id="medication-count">8 medications</span></h2></div><div class="toolbar-actions"><button id="imperfect">Try imperfect names</button><button id="add"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 5v14M5 12h14"/></svg>Simulate prescription update</button></div></div>
-      <div class="table-scroll">
-        <table aria-label="Mock prescription">
-          <thead><tr><th aria-label="Select"></th><th>Drug Name</th><th>Order Detail</th><th>Order Qty</th><th>Prev Disp Qty</th><th>Reserve Qty</th><th>Remarks</th><th>Drug Status</th></tr></thead>
-          <tbody id="rows"></tbody>
-        </table>
-      </div>
-      <div class="table-footer"><span class="live-dot"></span>Demonstration only<span>Fictional orders · No patient information</span></div>
-    </section>
-    <footer class="page-footer"><p>Medication labels from the supplied PHIS screenshot. The Glyceryl Trinitrate reference requires route confirmation.</p><span>HSM Formulary · 0.5.0</span></footer>
-  </main>
-  <script src="demo.js"></script>
-</body>
-</html>
+  <div class="demo-warning"><strong>PHIS DUMMY / DEMO ONLY</strong> Fictional patients and test orders. Simulated interaction fixtures are not clinical guidance. No hospital system is connected.</div>
+  <header class="phis-header"><strong>PHIS <small>Pharmacy Information System · Dummy</small></strong><span>Training workspace · <b id="build-version"></b></span></header>
+  <nav class="phis-links" aria-label="Dummy PHIS sections"><span>Demographic</span><span>Medication Profile</span><span>Pharmacist Notes</span><span>MTAC History</span></nav>
+  <section class="lab" aria-label="Demo test console">
+    <div class="lab-heading"><h1>Prescription test console</h1><a href="settings-preview.html" target="_blank" rel="noopener">Open settings sandbox ↗</a></div>
+    <div class="lab-controls"><label>Test scenario<select id="scenario"></select></label><label>Preview mode<select id="preview-mode"><option value="builtin">Built-in preview · no installation</option><option value="extension">Installed extension · real permissions</option></select></label><button id="reset">Reset scenario</button><button id="quick-checks">Run quick engine checks</button><button id="export-rules">Download demo rules</button></div>
+    <p id="expected" class="expected"></p><p id="preview-status" role="status">Starting local preview…</p>
+    <details id="quick-results"><summary>Quick-check results</summary><ol id="results"></ol><p>These checks exercise matching and rule logic. Use the presets to test hover, scrolling, selection, and row changes.</p></details>
+  </section>
+
+  <div class="patient-strip"><span>Patient: <b>DEMO PATIENT 001</b></span><span>MRN: <b>DEMO-0001</b></span><span>Actual Visit Date: <b>01/01/2030 (dummy)</b></span><span>Attending Practitioner: <b>Dr Demo</b></span><span>Visit Location: <b>TRAINING CLINIC</b></span></div>
+  <h2 class="section-bar dark">PHARMACY ACKNOWLEDGEMENT</h2>
+  <div class="queue-strip"><label><input type="checkbox"> Patient Arrived</label><label>Queue Status <select><option>Normal</option><option>Priority (dummy)</option></select></label><label>Queue No <input value="DEMO 1001" aria-label="Dummy queue number"></label><label>Arrival Time <input value="01/01/2030 09:00 AM" readonly></label><label>Collector Name <input value="Demo collector"></label></div>
+  <h2 class="section-bar">SUBSEQUENT ORDER</h2>
+  <div class="collection-form">
+    <div><label>Clinic TCA <input type="date" value="2030-02-01"></label><label>Next Collection Date <input type="date" value="2030-02-01"></label><label>Next Dispense At <select><option>Pharmacy Counter</option><option>Dummy collection point</option></select></label></div>
+    <div><label>No. of Days <input value="30" aria-label="Dummy number of days"></label><label>Supply Duration <input value="Demo supply only" readonly></label><label>MPR <input value="—" readonly></label></div>
+    <div><label>Next Collection Mode <select><option>Normal Collection</option><option>Dummy appointment</option></select></label><label>Next Collection Location <select><option>Outpatient Pharmacy</option><option>Training counter</option></select></label><label>VAS Series No. <input value="DEMO-VAS"></label></div>
+  </div>
+  <div class="section-bar prescription-bar"><h2>PRESCRIPTION</h2><span id="medication-count">0 medications</span><div class="phis-actions"><button data-action="Pause">Ⅱ</button><label><input type="checkbox"> ENGLISH</label><button data-action="Invoice">Invoice</button><button data-action="Release / Discard">Release/Discard</button><button data-action="Worksheet">Worksheet</button><button data-action="Balance medication sheet">Balance Medication Sheet</button><button data-action="Label">Label</button><button data-action="Dispense">Dispense</button></div></div>
+  <div class="row-tools"><label>Add / edit medication <input id="drug-input" list="medication-options" placeholder="Full formulary name or an imperfect test label"><datalist id="medication-options"></datalist></label><button id="add">Add row</button><button id="edit">Change selected name</button><button id="hide">Hide selected</button><button id="restore">Restore hidden</button><button id="remove">Remove selected</button><button id="imperfect">Add imperfect names</button></div>
+  <p id="lab-message" role="status">Select a row using its left checkbox to change, hide, or remove it. All actions affect this dummy page only.</p>
+  <div class="grid-scroll"><table id="prescription-table" aria-label="Mock prescription"><thead><tr><th><input id="select-all" type="checkbox" aria-label="Select all dummy medications"></th><th>Drug Name</th><th>Order Detail</th><th>Order Qty</th><th>Prev Disp Qty</th><th>Reserve Qty</th><th>POMs Received</th><th>Dispense UOM Qty</th><th>Balance</th><th>Remarks</th><th>Drug Counselling</th><th>Extemporaneous</th><th>Prescriber Name</th><th>Drug Status</th><th>Complete</th></tr></thead><tbody id="rows"></tbody></table></div>
+  <section id="secondary" hidden><h2 class="section-bar">SEPARATE DUMMY PRESCRIPTION — MUST NOT COMBINE WITH ABOVE</h2><div class="grid-scroll"><table aria-label="Separate mock prescription"><thead><tr><th>Select</th><th>Drug Name</th><th>Order Detail</th><th>Order Qty</th><th>Prev Disp Qty</th><th>Reserve Qty</th><th>POMs Received</th><th>Dispense UOM Qty</th><th>Balance</th><th>Remarks</th><th>Drug Counselling</th><th>Extemporaneous</th><th>Prescriber Name</th><th>Drug Status</th><th>Complete</th></tr></thead><tbody id="secondary-rows"></tbody></table></div></section>
+  <footer class="demo-footer">Layout approximates the supplied PHIS screenshot. Exact live PHIS HTML, real Edge permission prompts, patient context, and hospital-approved clinical rules still require separate validation.</footer>
+  <script src="data/formulary.js"></script><script src="scenarios.js"></script><script src="adapter.js"></script><script src="demo.js"></script><script src="preview.js"></script>
+</body></html>
